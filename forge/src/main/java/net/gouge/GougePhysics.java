@@ -63,7 +63,7 @@ public final class GougePhysics {
     private static final Set<UUID> gougeNoGravity = new HashSet<>();
 
     private static final TagKey<Item> TCONSTRUCT_PICKAXE =
-            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("tconstruct", "pickaxe"));
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("tconstruct", "modifiable/harvest/stone"));
 
     private GougePhysics() {}
 
