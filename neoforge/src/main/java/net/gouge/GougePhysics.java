@@ -1,14 +1,12 @@
 package net.gouge;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ClipContext;
@@ -62,13 +59,10 @@ public final class GougePhysics {
     private static final Map<UUID, ArrayDeque<BlockPos>> trails = new HashMap<>();
     private static final Set<UUID> gougeNoGravity = new HashSet<>();
 
-    private static final TagKey<Item> TCONSTRUCT_PICKAXE =
-            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("tconstruct", "modifiable/harvest/stone"));
-
     private GougePhysics() {}
 
     public static boolean isPickaxe(ItemStack stack) {
-        return stack.is(ItemTags.PICKAXES) || stack.is(TCONSTRUCT_PICKAXE) || stack.getItem() instanceof PickaxeItem;
+        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
     }
 
     public static void cleanup(UUID id) {

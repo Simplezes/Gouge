@@ -7,7 +7,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
@@ -18,14 +17,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Item.class)
+/**
+ * Mixed into ItemStack (not Item) so this still fires for modded tools whose Item subclass
+ * overrides use()/getUseDuration()/onUseTick()/releaseUsing() directly (e.g. Tinkers'
+ * Construct's ModifiableItem) - ItemStack's versions are plain forwarding methods that are
+ * never overridden by mods, so they always run before dispatching to the Item.
+ */
+@Mixin(ItemStack.class)
 public abstract class GougeItemMixin {
 
     @Unique private static final int GOUGE_MAX_USE_TICKS = 72000;
 
     @Inject(method = "getUseDuration", at = @At("HEAD"), cancellable = true)
-    private void gouge$getUseDuration(ItemStack stack, LivingEntity user, CallbackInfoReturnable<Integer> cir) {
-        if (GougePhysics.isPickaxe(stack)) {
+    private void gouge$getUseDuration(LivingEntity user, CallbackInfoReturnable<Integer> cir) {
+        ItemStack self = (ItemStack) (Object) this;
+        if (GougePhysics.isPickaxe(self)) {
             cir.setReturnValue(GOUGE_MAX_USE_TICKS);
         }
     }
@@ -33,7 +39,8 @@ public abstract class GougeItemMixin {
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void gouge$use(Level world, Player user, InteractionHand hand,
                            CallbackInfoReturnable<InteractionResult> cir) {
-        if (world.isClientSide || !GougePhysics.isPickaxe(user.getItemInHand(hand))) return;
+        ItemStack self = (ItemStack) (Object) this;
+        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (user.onGround() || user.getDeltaMovement().y >= 0) return;
 
         BlockHitResult hit = GougePhysics.raycast(world, user);
@@ -44,10 +51,9 @@ public abstract class GougeItemMixin {
         float hardness = state.getDestroySpeed(world, pos);
         if (hardness < 0) return;
 
-        ItemStack stack = user.getItemInHand(hand);
         double downwardSpeed = Math.abs(user.getDeltaMovement().y);
         boolean survived = GougePhysics.applyImpactDamage(
-                stack, (ServerLevel) world, (ServerPlayer) user, downwardSpeed, hardness);
+                self, (ServerLevel) world, (ServerPlayer) user, downwardSpeed, hardness);
         if (!survived) {
             cir.setReturnValue(InteractionResult.FAIL);
             return;
@@ -59,15 +65,17 @@ public abstract class GougeItemMixin {
     }
 
     @Inject(method = "onUseTick", at = @At("HEAD"))
-    private void gouge$onUseTick(Level world, LivingEntity user, ItemStack stack, int remainingUseTicks, CallbackInfo ci) {
-        if (world.isClientSide || !GougePhysics.isPickaxe(stack)) return;
+    private void gouge$onUseTick(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
+        ItemStack self = (ItemStack) (Object) this;
+        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.tick(player)) player.stopUsingItem();
     }
 
     @Inject(method = "releaseUsing", at = @At("HEAD"))
-    private void gouge$releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks, CallbackInfoReturnable<Boolean> cir) {
-        if (world.isClientSide || !GougePhysics.isPickaxe(stack)) return;
+    private void gouge$releaseUsing(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
+        ItemStack self = (ItemStack) (Object) this;
+        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         GougePhysics.stopSliding(player);
     }
