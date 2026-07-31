@@ -5,7 +5,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.PickaxeItem;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Hand;
@@ -27,7 +26,7 @@ public abstract class GougeItemMixin {
 
     @Inject(method = "getMaxUseTime(Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/LivingEntity;)I", at = @At("HEAD"), cancellable = true)
     private void gouge$maxUseTime(ItemStack stack, LivingEntity user, CallbackInfoReturnable<Integer> cir) {
-        if ((Object) this instanceof PickaxeItem) {
+        if (GougePhysics.isPickaxe(stack)) {
             cir.setReturnValue(GOUGE_MAX_USE_TICKS);
         }
     }
@@ -35,7 +34,7 @@ public abstract class GougeItemMixin {
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void gouge$use(World world, PlayerEntity user, Hand hand,
                            CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClient) return;
+        if (world.isClient || !GougePhysics.isPickaxe(user.getStackInHand(hand))) return;
         if (user.isOnGround() || user.getVelocity().y >= 0) return;
 
         BlockHitResult hit = GougePhysics.raycast(world, user);
@@ -62,14 +61,14 @@ public abstract class GougeItemMixin {
 
     @Inject(method = "usageTick", at = @At("HEAD"))
     private void gouge$usageTick(World world, LivingEntity user, ItemStack stack, int remainingUseTicks, CallbackInfo ci) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClient) return;
+        if (world.isClient || !GougePhysics.isPickaxe(stack)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
         if (!GougePhysics.tick(player)) player.stopUsingItem();
     }
 
     @Inject(method = "onStoppedUsing", at = @At("HEAD"))
     private void gouge$onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClient) return;
+        if (world.isClient || !GougePhysics.isPickaxe(stack)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
         GougePhysics.stopSliding(player);
     }

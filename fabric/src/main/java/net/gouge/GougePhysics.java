@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.PickaxeItem;
 import net.minecraft.network.packet.s2c.play.BlockBreakingProgressS2CPacket;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
@@ -58,6 +59,10 @@ public final class GougePhysics {
 
     private GougePhysics() {}
 
+    public static boolean isPickaxe(ItemStack stack) {
+        return stack.isIn(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
+    }
+
     public static void cleanup(UUID id) {
         hangData.remove(id);
         trails.remove(id);
@@ -66,7 +71,7 @@ public final class GougePhysics {
 
     public static void checkStale(ServerPlayerEntity player) {
         if (!gougeNoGravity.contains(player.getUuid())) return;
-        if (!(player.getActiveItem().getItem() instanceof PickaxeItem)) {
+        if (!isPickaxe(player.getActiveItem())) {
             player.setNoGravity(false);
             releaseHang(player.getUuid());
             clearCrack(player);
