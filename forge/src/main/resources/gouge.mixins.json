@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "net.gouge.mixin",
+  "refmap": "gouge.refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "GougeItemMixin",
+    "GougeLivingEntityMixin",
+    "GougeFallDamageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

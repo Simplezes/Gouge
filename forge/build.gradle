@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+}
+
+version = mod_version
+group = maven_group
+base.archivesName = archives_base_name
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// Forge's dev-time ClasspathLocator only scans one classpath entry per mod (wherever
+// META-INF/mods.toml lives) and never merges a separate classes dir into it, so resources
+// and compiled classes must land in the same directory for @Mod discovery to work in dev.
+sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    runs {
+        client {
+            workingDirectory project.file('run')
+            mods { gouge { source sourceSets.main } }
+        }
+        server {
+            workingDirectory project.file('run')
+            mods { gouge { source sourceSets.main } }
+        }
+    }
+}
+
+mixin {
+    add sourceSets.main, 'gouge.refmap.json'
+    config 'gouge.mixins.json'
+}
+
+reobf {
+    jar {}
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+jar {
+    manifest {
+        attributes([
+            'MixinConfigs': 'gouge.mixins.json',
+            'Implementation-Version': project.version
+        ])
+    }
+    finalizedBy 'reobfJar'
+}

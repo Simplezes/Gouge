@@ -1,0 +1,22 @@
+/.mcp.json
+/build_all.ps1
+# Gradle
+.gradle/
+**/build/
+**/run/
+**/runs/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+**/.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/

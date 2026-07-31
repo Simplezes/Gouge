@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+
+[[mods]]
+    modId="gouge"
+    version="${file.jarVersion}"
+    displayName="Gouge"
+    description="Slam your pickaxe into a wall to save yourself from a fatal fall."
+    authors="Simplezes"
+    logoFile="icon.png"
+
+[[dependencies.gouge]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.gouge]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1,1.21.2)"
+    ordering="NONE"
+    side="BOTH"
+
+[[mixins]]
+    config="gouge.mixins.json"
