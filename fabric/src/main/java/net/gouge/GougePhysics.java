@@ -11,13 +11,16 @@ import net.minecraft.item.Items;
 import net.minecraft.item.PickaxeItem;
 import net.minecraft.network.packet.s2c.play.BlockBreakingProgressS2CPacket;
 import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -57,10 +60,13 @@ public final class GougePhysics {
     private static final Map<UUID, ArrayDeque<BlockPos>> trails = new HashMap<>();
     private static final Set<UUID> gougeNoGravity = new HashSet<>();
 
+    private static final TagKey<Item> TCONSTRUCT_PICKAXE =
+            TagKey.of(RegistryKeys.ITEM, Identifier.of("tconstruct", "pickaxe"));
+
     private GougePhysics() {}
 
     public static boolean isPickaxe(ItemStack stack) {
-        return stack.isIn(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
+        return stack.isIn(ItemTags.PICKAXES) || stack.isIn(TCONSTRUCT_PICKAXE) || stack.getItem() instanceof PickaxeItem;
     }
 
     public static void cleanup(UUID id) {
