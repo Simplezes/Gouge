@@ -15,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
@@ -57,6 +58,10 @@ public final class GougePhysics {
 
     private GougePhysics() {}
 
+    public static boolean isPickaxe(ItemStack stack) {
+        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
+    }
+
     public static void cleanup(UUID id) {
         hangData.remove(id);
         trails.remove(id);
@@ -65,7 +70,7 @@ public final class GougePhysics {
 
     public static void checkStale(ServerPlayer player) {
         if (!gougeNoGravity.contains(player.getUUID())) return;
-        if (!(player.getUseItem().getItem() instanceof PickaxeItem)) {
+        if (!isPickaxe(player.getUseItem())) {
             player.setNoGravity(false);
             releaseHang(player.getUUID());
             clearCrack(player);
