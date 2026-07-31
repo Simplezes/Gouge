@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "gouge",
+  "version": "${version}",
+  "name": "Gouge",
+  "description": "Slam your pickaxe into a wall to save yourself from a fatal fall.",
+  "authors": ["Simplezes"],
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.gouge.Gouge"]
+  },
+  "mixins": ["gouge.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "1.20.1"
+  }
+}
+
+
+
+
+
+
+

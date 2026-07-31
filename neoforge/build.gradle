@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.143'
+}
+
+version = mod_version
+group = maven_group
+base.archivesName = archives_base_name
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// 1.20.1 is the last Minecraft version NeoForge shared with (was forked from) Forge; it is
+// still published under the "net.neoforged:forge" artifact rather than "net.neoforged:neoforge",
+// and is built with ModDevGradle's legacyforge addon plugin rather than the newer moddev plugin.
+legacyForge {
+    enable {
+        neoForgeVersion = neo_version
+    }
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+    }
+
+    mods {
+        gouge {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+mixin {
+    add sourceSets.main, 'gouge.refmap.json'
+    config 'gouge.mixins.json'
+}
+
+jar {
+    manifest {
+        attributes([
+            'MixinConfigs': 'gouge.mixins.json',
+            'Implementation-Version': project.version
+        ])
+    }
+}
