@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "net.gouge.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "GougeItemMixin",
+    "GougeLivingEntityMixin",
+    "GougeFallDamageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
