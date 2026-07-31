@@ -9,7 +9,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +25,7 @@ public abstract class GougeItemMixin {
 
     @Inject(method = "getUseDuration", at = @At("HEAD"), cancellable = true)
     private void gouge$getUseDuration(ItemStack stack, LivingEntity user, CallbackInfoReturnable<Integer> cir) {
-        if ((Object) this instanceof PickaxeItem) {
+        if (GougePhysics.isPickaxe(stack)) {
             cir.setReturnValue(GOUGE_MAX_USE_TICKS);
         }
     }
@@ -34,7 +33,7 @@ public abstract class GougeItemMixin {
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void gouge$use(Level world, Player user, InteractionHand hand,
                            CallbackInfoReturnable<InteractionResult> cir) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClientSide) return;
+        if (world.isClientSide || !GougePhysics.isPickaxe(user.getItemInHand(hand))) return;
         if (user.onGround() || user.getDeltaMovement().y >= 0) return;
 
         BlockHitResult hit = GougePhysics.raycast(world, user);
@@ -61,14 +60,14 @@ public abstract class GougeItemMixin {
 
     @Inject(method = "onUseTick", at = @At("HEAD"))
     private void gouge$onUseTick(Level world, LivingEntity user, ItemStack stack, int remainingUseTicks, CallbackInfo ci) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClientSide) return;
+        if (world.isClientSide || !GougePhysics.isPickaxe(stack)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.tick(player)) player.stopUsingItem();
     }
 
     @Inject(method = "releaseUsing", at = @At("HEAD"))
     private void gouge$releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks, CallbackInfoReturnable<Boolean> cir) {
-        if (!((Object) this instanceof PickaxeItem) || world.isClientSide) return;
+        if (world.isClientSide || !GougePhysics.isPickaxe(stack)) return;
         if (!(user instanceof ServerPlayer player)) return;
         GougePhysics.stopSliding(player);
     }
