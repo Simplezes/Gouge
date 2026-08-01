@@ -295,8 +295,9 @@ public final class GougePhysics {
             }
         }
 
-        releaseHang(player.getUuid());
-        player.setNoGravity(false);
+        d[0] = -1;
+        gougeNoGravity.add(player.getUuid());
+        player.setNoGravity(true);
         d[4] = 1;
         Vec3d v = player.getVelocity();
         double speed = Math.abs(v.y);
