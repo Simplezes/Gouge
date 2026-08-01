@@ -10,9 +10,6 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-// Forge's dev-time ClasspathLocator only scans one classpath entry per mod (wherever
-// META-INF/mods.toml lives) and never merges a separate classes dir into it, so resources
-// and compiled classes must land in the same directory for @Mod discovery to work in dev.
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
 
 minecraft {
@@ -34,10 +31,6 @@ mixin {
     config 'gouge.mixins.json'
 }
 
-reobf {
-    jar {}
-}
-
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 }
@@ -49,5 +42,4 @@ jar {
             'Implementation-Version': project.version
         ])
     }
-    finalizedBy 'reobfJar'
 }

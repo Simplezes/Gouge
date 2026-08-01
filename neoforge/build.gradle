@@ -25,6 +25,9 @@ dependencies {
 
 jar {
     manifest {
-        attributes(['MixinConfigs': 'gouge.mixins.json'])
+        attributes([
+            'MixinConfigs': 'gouge.mixins.json',
+            'Implementation-Version': project.version
+        ])
     }
 }
