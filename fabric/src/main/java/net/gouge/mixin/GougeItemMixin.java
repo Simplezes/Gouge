@@ -61,6 +61,7 @@ public abstract class GougeItemMixin {
 
         GougePhysics.spawnImpact((ServerWorld) world, hit, state, hardness);
         user.setCurrentHand(hand);
+        GougePhysics.markActive(user.getUuid());
         cir.setReturnValue(ActionResult.SUCCESS);
     }
 
@@ -69,6 +70,7 @@ public abstract class GougeItemMixin {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClient || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
+        if (!GougePhysics.isActive(player.getUuid())) return;
         if (!GougePhysics.tick(player)) player.stopUsingItem();
     }
 
@@ -77,6 +79,7 @@ public abstract class GougeItemMixin {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClient || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
+        if (!GougePhysics.isActive(player.getUuid())) return;
         GougePhysics.stopSliding(player);
     }
 }
