@@ -96,6 +96,7 @@ public final class GougePhysics {
         releaseHang(player.getUuid());
         clearCrack(player);
         player.setNoGravity(false);
+        activeUse.remove(player.getUuid());
     }
 
     private static int[] data(UUID id) {
@@ -106,6 +107,9 @@ public final class GougePhysics {
         int[] d = hangData.get(id);
         if (d != null) d[0] = -1;
         gougeNoGravity.remove(id);
+    }
+
+    public static void clearActive(UUID id) {
         activeUse.remove(id);
     }
 
