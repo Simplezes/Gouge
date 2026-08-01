@@ -1,8 +1,6 @@
 /.claude
 /.mcp.json
 /build_all.ps1
-/MOD_COMPATIBILITY.md
-/tconstruct
 
 # Gradle
 .gradle/
