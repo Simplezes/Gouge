@@ -17,12 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Mixed into ItemStack (not Item) so this still fires for modded tools whose Item subclass
- * overrides use()/getMaxUseTime()/usageTick()/onStoppedUsing() directly (e.g. Tinkers'
- * Construct's ModifiableItem) - ItemStack's versions are plain forwarding methods that are
- * never overridden by mods, so they always run before dispatching to the Item.
- */
 @Mixin(ItemStack.class)
 public abstract class GougeItemMixin {
 
