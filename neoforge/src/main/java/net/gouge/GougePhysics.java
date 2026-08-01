@@ -38,9 +38,9 @@ import java.util.UUID;
 
 public final class GougePhysics {
     private static final double RAYCAST_RANGE = 2.5;
-    private static final double HARDNESS_SCALE = 0.15;
-    private static final double MIN_FRICTION = 0.20;
-    private static final double MAX_FRICTION = 0.95;
+    private static final double SOFT_SLIDE_MAX_SPEED = 1.0;
+    private static final double SOFT_SLIDE_MIN_SPEED = 0.6;
+    private static final double SOFT_SLIDE_HARDNESS_SCALE = 0.27;
     private static final double HORIZONTAL_DAMPING = 0.5;
     private static final float HARD_MATERIAL_HARDNESS = 1.5f;
     private static final double HARD_FRICTION_BASE = 0.90;
@@ -302,7 +302,6 @@ public final class GougePhysics {
         player.setNoGravity(false);
         d[4] = 1;
         Vec3 v = player.getDeltaMovement();
-        double friction = Mth.clamp(0.95 - hardness * HARDNESS_SCALE, MIN_FRICTION, MAX_FRICTION);
         double speed = Math.abs(v.y);
 
         if (speed > 1.5) {
@@ -313,7 +312,9 @@ public final class GougePhysics {
             }
         }
 
-        Vec3 slid = new Vec3(v.x * HORIZONTAL_DAMPING, v.y * friction, v.z * HORIZONTAL_DAMPING);
+        double maxSlideSpeed = Mth.clamp(
+                SOFT_SLIDE_MAX_SPEED - hardness * SOFT_SLIDE_HARDNESS_SCALE, SOFT_SLIDE_MIN_SPEED, SOFT_SLIDE_MAX_SPEED);
+        Vec3 slid = new Vec3(v.x * HORIZONTAL_DAMPING, Math.max(v.y, -maxSlideSpeed), v.z * HORIZONTAL_DAMPING);
         player.setDeltaMovement(slid);
         player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), slid));
 
