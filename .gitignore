@@ -25,3 +25,4 @@ Thumbs.db
 # Build output
 dist/
 .worktrees/
+/build_dist.ps1
