@@ -10,9 +10,6 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-// Forge's dev-time ClasspathLocator only scans one classpath entry per mod (wherever
-// META-INF/mods.toml lives) and never merges a separate classes dir into it, so resources
-// and compiled classes must land in the same directory for @Mod discovery to work in dev.
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
 
 minecraft {

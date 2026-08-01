@@ -9,8 +9,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-// 1.20.1 predates the data-component/datapack-enchantment system introduced in 1.20.5,
-// so Grip and Momentum are plain registered Enchantment subclasses instead of data/gouge/enchantment/*.json.
 public final class GougeEnchantments {
     public static final DeferredRegister<Enchantment> ENCHANTMENTS =
             DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, Gouge.MOD_ID);

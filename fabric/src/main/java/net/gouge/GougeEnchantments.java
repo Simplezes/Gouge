@@ -9,15 +9,12 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 
-// 1.20.1 predates the data-component/datapack-enchantment system introduced in 1.20.5,
-// so Grip and Momentum are plain registered Enchantment subclasses instead of data/gouge/enchantment/*.json.
 public final class GougeEnchantments {
     public static final Enchantment GRIP = register("grip", 3);
     public static final Enchantment MOMENTUM = register("momentum", 3);
 
     private GougeEnchantments() {}
 
-    /** No-op call used to force this class (and its registrations) to load. */
     public static void init() {}
 
     private static Enchantment register(String id, int maxLevel) {

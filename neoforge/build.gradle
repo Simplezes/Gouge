@@ -9,9 +9,6 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-// 1.20.1 is the last Minecraft version NeoForge shared with (was forked from) Forge; it is
-// still published under the "net.neoforged:forge" artifact rather than "net.neoforged:neoforge",
-// and is built with ModDevGradle's legacyforge addon plugin rather than the newer moddev plugin.
 legacyForge {
     enable {
         neoForgeVersion = neo_version
