@@ -38,9 +38,9 @@ import java.util.UUID;
 
 public final class GougePhysics {
     private static final double RAYCAST_RANGE = 2.5;
-    private static final double SOFT_SLIDE_MAX_SPEED = 0.6;
-    private static final double SOFT_SLIDE_MIN_SPEED = 0.35;
-    private static final double SOFT_SLIDE_HARDNESS_SCALE = 0.17;
+    private static final double SOFT_SLIDE_MAX_SPEED = 0.5;
+    private static final double SOFT_SLIDE_MIN_SPEED = 0.3;
+    private static final double SOFT_SLIDE_HARDNESS_SCALE = 0.13;
     private static final double HORIZONTAL_DAMPING = 0.5;
     private static final float HARD_MATERIAL_HARDNESS = 1.5f;
     private static final double HARD_FRICTION_BASE = 0.90;
