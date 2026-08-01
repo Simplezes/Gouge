@@ -55,6 +55,7 @@ public final class GougePhysics {
     private static final Map<UUID, int[]> hangData = new HashMap<>();
     private static final Map<UUID, ArrayDeque<BlockPos>> trails = new HashMap<>();
     private static final Set<UUID> gougeNoGravity = new HashSet<>();
+    private static final Set<UUID> activeUse = new HashSet<>();
 
     private GougePhysics() {}
 
@@ -66,6 +67,15 @@ public final class GougePhysics {
         hangData.remove(id);
         trails.remove(id);
         gougeNoGravity.remove(id);
+        activeUse.remove(id);
+    }
+
+    public static void markActive(UUID id) {
+        activeUse.add(id);
+    }
+
+    public static boolean isActive(UUID id) {
+        return activeUse.contains(id);
     }
 
     public static void checkStale(ServerPlayer player) {
@@ -97,6 +107,7 @@ public final class GougePhysics {
         int[] d = hangData.get(id);
         if (d != null) d[0] = -1;
         gougeNoGravity.remove(id);
+        activeUse.remove(id);
     }
 
     public static void clearCrack(ServerPlayer player) {
