@@ -71,7 +71,10 @@ public abstract class GougeItemMixin {
         if (world.isClient || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
         if (!GougePhysics.isActive(player.getUuid())) return;
-        if (!GougePhysics.tick(player)) player.stopUsingItem();
+        if (!GougePhysics.tick(player)) {
+            GougePhysics.clearActive(player.getUuid());
+            player.stopUsingItem();
+        }
     }
 
     @Inject(method = "onStoppedUsing", at = @At("HEAD"))
