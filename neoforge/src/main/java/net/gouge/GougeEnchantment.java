@@ -6,8 +6,6 @@ import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentCategory;
 
-// ponytail: Grip and Momentum are identical shape (pickaxe-only, 3 levels, same cost curve),
-// so both share this one class instead of two near-duplicate subclasses.
 public class GougeEnchantment extends Enchantment {
     public GougeEnchantment() {
         super(Rarity.UNCOMMON, EnchantmentCategory.DIGGER, new EquipmentSlot[]{EquipmentSlot.MAINHAND});

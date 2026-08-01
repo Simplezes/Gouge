@@ -13,7 +13,6 @@ public final class GougeEnchantments {
         return Registry.register(Registries.ENCHANTMENT, Identifier.of("gouge", name), new GougeEnchantment());
     }
 
-    // ponytail: no-op, just forces this class (and its static registration) to load from Gouge.onInitialize().
     public static void init() {}
 
     private GougeEnchantments() {}
