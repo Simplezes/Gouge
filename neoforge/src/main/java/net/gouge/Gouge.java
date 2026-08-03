@@ -2,6 +2,7 @@ package net.gouge;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -12,6 +13,9 @@ public class Gouge {
 
     public Gouge(IEventBus modEventBus) {
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
+        if (ModList.get().isLoaded("parcool")) {
+            net.gouge.extern.parcool.ParCoolCompat.register();
+        }
     }
 
     private void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {

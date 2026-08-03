@@ -36,6 +36,8 @@ public abstract class GougeItemMixin {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (user.onGround() || user.getDeltaMovement().y >= 0) return;
+        if (net.neoforged.fml.ModList.get().isLoaded("parcool")
+                && net.gouge.extern.parcool.ParCoolCompat.isWallActionActive(user.getUUID())) return;
 
         BlockHitResult hit = GougePhysics.raycast(world, user);
         if (hit == null) return;
@@ -59,7 +61,7 @@ public abstract class GougeItemMixin {
         cir.setReturnValue(InteractionResult.SUCCESS);
     }
 
-    @Inject(method = "onUseTick", at = @At("HEAD"))
+    @Inject(method = "onUseTick", at = @At("HEAD"), cancellable = true)
     private void gouge$onUseTick(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
@@ -69,14 +71,16 @@ public abstract class GougeItemMixin {
             GougePhysics.clearActive(player.getUUID());
             player.stopUsingItem();
         }
+        ci.cancel();
     }
 
-    @Inject(method = "releaseUsing", at = @At("HEAD"))
+    @Inject(method = "releaseUsing", at = @At("HEAD"), cancellable = true)
     private void gouge$releaseUsing(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isActive(player.getUUID())) return;
         GougePhysics.stopSliding(player);
+        ci.cancel();
     }
 }

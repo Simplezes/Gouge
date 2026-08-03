@@ -237,7 +237,13 @@ public final class GougePhysics {
         d[3] = sneakingNow ? 1 : 0;
         boolean onCooldown = d[1] != -1 && player.age < d[1];
 
-        if (hardness >= HARD_MATERIAL_HARDNESS && !onCooldown) {
+        if (hardness >= HARD_MATERIAL_HARDNESS) {
+            if (onCooldown) {
+                player.setNoGravity(false);
+                releaseHang(player.getUuid());
+                clearCrack(player);
+                return false;
+            }
             if (wasSneaking && !sneakingNow) {
                 d[2] = player.age;
             } else if (!wasSneaking && sneakingNow) {
