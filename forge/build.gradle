@@ -12,6 +12,10 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
 
+repositories {
+    maven { url = 'https://cursemaven.com' }
+}
+
 minecraft {
     mappings channel: 'official', version: minecraft_version
     runs {
@@ -38,6 +42,7 @@ reobf {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    compileOnly "curse.maven:parcool-482378:7760589"
 }
 
 jar {
