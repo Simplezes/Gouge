@@ -60,7 +60,8 @@ public final class GougePhysics {
     private GougePhysics() {}
 
     public static boolean isPickaxe(ItemStack stack) {
-        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
+        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
+                || stack.getItem().canPerformAction(stack, net.neoforged.neoforge.common.ToolActions.PICKAXE_DIG);
     }
 
     public static void cleanup(UUID id) {
@@ -232,7 +233,13 @@ public final class GougePhysics {
         d[3] = sneakingNow ? 1 : 0;
         boolean onCooldown = d[1] != -1 && player.tickCount < d[1];
 
-        if (hardness >= HARD_MATERIAL_HARDNESS && !onCooldown) {
+        if (hardness >= HARD_MATERIAL_HARDNESS) {
+            if (onCooldown) {
+                player.setNoGravity(false);
+                releaseHang(player.getUUID());
+                clearCrack(player);
+                return false;
+            }
             if (wasSneaking && !sneakingNow) {
                 d[2] = player.tickCount;
             } else if (!wasSneaking && sneakingNow) {

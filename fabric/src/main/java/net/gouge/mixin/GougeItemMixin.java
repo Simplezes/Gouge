@@ -59,7 +59,7 @@ public abstract class GougeItemMixin {
         cir.setReturnValue(TypedActionResult.success(self));
     }
 
-    @Inject(method = "usageTick", at = @At("HEAD"))
+    @Inject(method = "usageTick", at = @At("HEAD"), cancellable = true)
     private void gouge$usageTick(World world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClient || !GougePhysics.isPickaxe(self)) return;
@@ -69,14 +69,16 @@ public abstract class GougeItemMixin {
             GougePhysics.clearActive(player.getUuid());
             player.stopUsingItem();
         }
+        ci.cancel();
     }
 
-    @Inject(method = "onStoppedUsing", at = @At("HEAD"))
+    @Inject(method = "onStoppedUsing", at = @At("HEAD"), cancellable = true)
     private void gouge$onStoppedUsing(World world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
         if (world.isClient || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayerEntity player)) return;
         if (!GougePhysics.isActive(player.getUuid())) return;
         GougePhysics.stopSliding(player);
+        ci.cancel();
     }
 }
