@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class GougePhysics {
+
     private static final double RAYCAST_RANGE = 2.5;
     private static final double SOFT_SLIDE_MAX_SPEED = 0.5;
     private static final double SOFT_SLIDE_MIN_SPEED = 0.3;
@@ -50,7 +51,7 @@ public final class GougePhysics {
     private static final int HANG_COOLDOWN_TICKS = 100;
     private static final double WALLKICK_HORIZONTAL = 1.4;
     private static final double WALLKICK_VERTICAL = 1.1;
-    private static final int DOUBLE_TAP_WINDOW_TICKS = 10;
+    private static final int DOUBLE_TAP_WINDOW_TICKS = 14;
     private static final int TRAIL_LENGTH = 5;
 
     private static final Map<UUID, int[]> hangData = new HashMap<>();
@@ -58,7 +59,8 @@ public final class GougePhysics {
     private static final Set<UUID> gougeNoGravity = new HashSet<>();
     private static final Set<UUID> activeUse = new HashSet<>();
 
-    private GougePhysics() {}
+    private GougePhysics() {
+    }
 
     public static boolean isPickaxe(ItemStack stack) {
         return stack.isIn(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem;
@@ -80,7 +82,9 @@ public final class GougePhysics {
     }
 
     public static void checkStale(ServerPlayerEntity player) {
-        if (!gougeNoGravity.contains(player.getUuid())) return;
+        if (!gougeNoGravity.contains(player.getUuid())) {
+            return;
+        }
         if (!isPickaxe(player.getActiveItem())) {
             player.setNoGravity(false);
             releaseHang(player.getUuid());
@@ -107,7 +111,9 @@ public final class GougePhysics {
 
     public static void releaseHang(UUID id) {
         int[] d = hangData.get(id);
-        if (d != null) d[0] = -1;
+        if (d != null) {
+            d[0] = -1;
+        }
         gougeNoGravity.remove(id);
     }
 
@@ -119,7 +125,9 @@ public final class GougePhysics {
         ArrayDeque<BlockPos> trail = trails.remove(player.getUuid());
         if (trail != null) {
             int slot = 0;
-            for (BlockPos p : trail) sendCrack(player, p, -1, slot++);
+            for (BlockPos p : trail) {
+                sendCrack(player, p, -1, slot++);
+            }
         }
     }
 
@@ -131,28 +139,54 @@ public final class GougePhysics {
     private static int enchLevel(ItemStack stack, RegistryKey<Enchantment> key) {
         ItemEnchantmentsComponent enchants = stack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
         for (var entry : enchants.getEnchantments()) {
-            if (entry.matchesKey(key)) return enchants.getLevel(entry);
+            if (entry.matchesKey(key)) {
+                return enchants.getLevel(entry);
+            }
         }
         return 0;
     }
 
     private static int hangDrain(Item item) {
-        if (item == Items.WOODEN_PICKAXE)    return 1;
-        if (item == Items.STONE_PICKAXE)     return 2;
-        if (item == Items.GOLDEN_PICKAXE)    return 1;
-        if (item == Items.IRON_PICKAXE)      return 3;
-        if (item == Items.DIAMOND_PICKAXE)   return 5;
-        if (item == Items.NETHERITE_PICKAXE) return 7;
+        if (item == Items.WOODEN_PICKAXE) {
+            return 1;
+        }
+        if (item == Items.STONE_PICKAXE) {
+            return 2;
+        }
+        if (item == Items.GOLDEN_PICKAXE) {
+            return 1;
+        }
+        if (item == Items.IRON_PICKAXE) {
+            return 3;
+        }
+        if (item == Items.DIAMOND_PICKAXE) {
+            return 5;
+        }
+        if (item == Items.NETHERITE_PICKAXE) {
+            return 7;
+        }
         return 2;
     }
 
     private static int baseHangTicks(Item item) {
-        if (item == Items.WOODEN_PICKAXE)    return 40;
-        if (item == Items.STONE_PICKAXE)     return 80;
-        if (item == Items.GOLDEN_PICKAXE)    return 30;
-        if (item == Items.IRON_PICKAXE)      return 120;
-        if (item == Items.DIAMOND_PICKAXE)   return 200;
-        if (item == Items.NETHERITE_PICKAXE) return 300;
+        if (item == Items.WOODEN_PICKAXE) {
+            return 40;
+        }
+        if (item == Items.STONE_PICKAXE) {
+            return 80;
+        }
+        if (item == Items.GOLDEN_PICKAXE) {
+            return 30;
+        }
+        if (item == Items.IRON_PICKAXE) {
+            return 120;
+        }
+        if (item == Items.DIAMOND_PICKAXE) {
+            return 200;
+        }
+        if (item == Items.NETHERITE_PICKAXE) {
+            return 300;
+        }
         return 60;
     }
 
@@ -166,7 +200,9 @@ public final class GougePhysics {
         BlockHitResult hit = world.raycast(new RaycastContext(
                 start, start.add(look.multiply(RAYCAST_RANGE)),
                 RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, user));
-        if (hit.getType() == HitResult.Type.BLOCK) return hit;
+        if (hit.getType() == HitResult.Type.BLOCK) {
+            return hit;
+        }
 
         Vec3d horiz = new Vec3d(look.x, 0, look.z).normalize().multiply(RAYCAST_RANGE);
         BlockHitResult hHit = world.raycast(new RaycastContext(
@@ -176,9 +212,10 @@ public final class GougePhysics {
     }
 
     public static boolean applyImpactDamage(ItemStack stack, ServerWorld world, ServerPlayerEntity player,
-                                            double downwardSpeed, float hardness) {
+            double downwardSpeed, float hardness) {
         int damage = Math.round((float) (downwardSpeed * Math.min(hardness, 5.0f) * 3));
-        stack.damage(damage, world, player, item -> {});
+        stack.damage(damage, world, player, item -> {
+        });
         return !stack.isEmpty();
     }
 
@@ -237,6 +274,10 @@ public final class GougePhysics {
         d[3] = sneakingNow ? 1 : 0;
         boolean onCooldown = d[1] != -1 && player.age < d[1];
 
+        if (!onCooldown && wasSneaking && !sneakingNow) {
+            d[2] = player.age;
+        }
+
         if (hardness >= HARD_MATERIAL_HARDNESS) {
             if (onCooldown) {
                 player.setNoGravity(false);
@@ -244,15 +285,12 @@ public final class GougePhysics {
                 clearCrack(player);
                 return false;
             }
-            if (wasSneaking && !sneakingNow) {
-                d[2] = player.age;
-            } else if (!wasSneaking && sneakingNow) {
+            if (!wasSneaking && sneakingNow) {
                 if (d[2] != -1 && player.age - d[2] <= DOUBLE_TAP_WINDOW_TICKS) {
                     d[2] = -1;
                     return wallKick(player, world, hit, d);
                 }
             }
-
             d[4] = 0;
             player.setNoGravity(true);
             gougeNoGravity.add(player.getUuid());
@@ -278,7 +316,8 @@ public final class GougePhysics {
 
                 if (player.age % 20 == 0) {
                     ItemStack stack = player.getActiveItem();
-                    stack.damage(hangDrain(stack.getItem()), world, player, item -> {});
+                    stack.damage(hangDrain(stack.getItem()), world, player, item -> {
+                    });
                     if (stack.isEmpty()) {
                         releaseHang(player.getUuid());
                         player.setNoGravity(false);
@@ -327,7 +366,7 @@ public final class GougePhysics {
     }
 
     private static void updateClimbFx(ServerPlayerEntity player, ServerWorld world, BlockHitResult hit,
-                                       BlockPos pos, BlockState state, float hardness) {
+            BlockPos pos, BlockState state, float hardness) {
         ArrayDeque<BlockPos> trail = trails.computeIfAbsent(player.getUuid(), k -> new ArrayDeque<>());
         if (trail.isEmpty() || !trail.peekFirst().equals(pos)) {
             trail.addFirst(pos);
@@ -338,7 +377,9 @@ public final class GougePhysics {
             int slot = 0;
             for (BlockPos trailPos : trail) {
                 sendCrack(player, trailPos, stage, slot++);
-                if (stage > 1) stage--;
+                if (stage > 1) {
+                    stage--;
+                }
             }
         }
 
