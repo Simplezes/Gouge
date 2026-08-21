@@ -49,7 +49,7 @@ public final class GougePhysics {
     private static final int HANG_COOLDOWN_TICKS = 100;
     private static final double WALLKICK_HORIZONTAL = 1.4;
     private static final double WALLKICK_VERTICAL = 1.1;
-    private static final int DOUBLE_TAP_WINDOW_TICKS = 10;
+    private static final int DOUBLE_TAP_WINDOW_TICKS = 14;
     private static final int TRAIL_LENGTH = 5;
 
     private static final Map<UUID, int[]> hangData = new HashMap<>();
@@ -228,10 +228,14 @@ public final class GougePhysics {
         BlockPos pos = hit.getBlockPos();
         BlockState state = world.getBlockState(pos);
         float hardness = Math.max(0f, state.getDestroySpeed(world, pos));
-        boolean sneakingNow = player.isCrouching();
+        boolean sneakingNow = player.isShiftKeyDown();
         boolean wasSneaking = d[3] == 1;
         d[3] = sneakingNow ? 1 : 0;
         boolean onCooldown = d[1] != -1 && player.tickCount < d[1];
+
+        if (!onCooldown && wasSneaking && !sneakingNow) {
+            d[2] = player.tickCount;
+        }
 
         if (hardness >= HARD_MATERIAL_HARDNESS) {
             if (onCooldown) {
@@ -240,9 +244,7 @@ public final class GougePhysics {
                 clearCrack(player);
                 return false;
             }
-            if (wasSneaking && !sneakingNow) {
-                d[2] = player.tickCount;
-            } else if (!wasSneaking && sneakingNow) {
+            if (!wasSneaking && sneakingNow) {
                 if (d[2] != -1 && player.tickCount - d[2] <= DOUBLE_TAP_WINDOW_TICKS) {
                     d[2] = -1;
                     return wallKick(player, world, hit, d);
