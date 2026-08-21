@@ -38,21 +38,21 @@ public final class ParCoolCompat {
 
     private static final class Listener {
         @SubscribeEvent
-        public void onTryToStart(ParCoolActionEvent.TryToStart event) {
+        public void onTryToStart(ParCoolActionEvent.TryToStartEvent event) {
             if (isWallAction(event.getAction()) && GougePhysics.isActive(event.getPlayer().getUUID())) {
                 event.setCanceled(true);
             }
         }
 
         @SubscribeEvent
-        public void onStartPre(ParCoolActionEvent.Start.Pre event) {
+        public void onStartPre(ParCoolActionEvent.StartEvent event) {
             if (isWallAction(event.getAction())) {
                 wallActionActive.add(event.getPlayer().getUUID());
             }
         }
 
         @SubscribeEvent
-        public void onFinishPost(ParCoolActionEvent.Finish.Post event) {
+        public void onFinishPost(ParCoolActionEvent.StopEvent event) {
             if (isWallAction(event.getAction())) {
                 wallActionActive.remove(event.getPlayer().getUUID());
             }

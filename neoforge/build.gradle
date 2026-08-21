@@ -10,7 +10,7 @@ base.archivesName = archives_base_name
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
-    maven { url = 'https://cursemaven.com' }
+    maven { url = 'https://api.modrinth.com/maven' }
 }
 
 runs {
@@ -25,7 +25,7 @@ runs {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
-    compileOnly "curse.maven:parcool-482378:7760593"
+    compileOnly "maven.modrinth:parcool:Iabk9mRT"
 }
 
 jar {
