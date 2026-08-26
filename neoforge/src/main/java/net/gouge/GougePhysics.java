@@ -54,7 +54,7 @@ public final class GougePhysics {
 
     public static boolean isPickaxe(ItemStack stack) {
         return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
-                || stack.getItem().canPerformAction(stack, net.neoforged.neoforge.common.ToolActions.PICKAXE_DIG);
+                || stack.getItem().canPerformAction(stack, net.minecraftforge.common.ToolActions.PICKAXE_DIG);
     }
 
     public static void cleanup(UUID id) {
