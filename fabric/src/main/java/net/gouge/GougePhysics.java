@@ -129,7 +129,7 @@ public final class GougePhysics {
         if (GougeConfig.INSTANCE.pickaxes.containsKey(idStr)) return GougeConfig.INSTANCE.pickaxes.get(idStr);
         for (var entry : GougeConfig.INSTANCE.pickaxes.entrySet()) {
             if (entry.getKey().startsWith("#")) {
-                net.minecraft.util.Identifier tagId = net.minecraft.util.Identifier.of(entry.getKey().substring(1));
+                net.minecraft.util.Identifier tagId = new net.minecraft.util.Identifier(entry.getKey().substring(1));
                 net.minecraft.registry.tag.TagKey<Item> tagKey = net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.ITEM, tagId);
                 if (stack.isIn(tagKey)) return entry.getValue();
             }
