@@ -242,7 +242,7 @@ public final class GougePhysics {
         BlockPos pos = hit.getBlockPos();
         BlockState state = world.getBlockState(pos);
         float hardness = Math.max(0f, state.getDestroySpeed(world, pos));
-        boolean sneakingNow = player.getLastClientInput().shift();
+        boolean sneakingNow = player.isShiftKeyDown();
         boolean wasSneaking = d[3] == 1;
         d[3] = sneakingNow ? 1 : 0;
         boolean onCooldown = d[1] != -1 && player.tickCount < d[1];
@@ -396,7 +396,7 @@ public final class GougePhysics {
         int reduction = (int) (GougeConfig.INSTANCE.enchantments.momentum_reduction * 20);
         int cooldown = Math.max(20, baseCooldown - momentum * reduction);
         d[1] = player.tickCount + cooldown;
-        player.getCooldowns().addCooldown(stack, cooldown);
+        player.getCooldowns().addCooldown(stack.getItem(), cooldown);
     }
 
     private static void spawnSlip(ServerLevel world, Vec3 p) {
