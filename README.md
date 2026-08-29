@@ -18,7 +18,7 @@ Falling toward a wall? Right-click it with a pickaxe. It bites into the surface 
 
 **Want off the wall early?** Double-tap crouch within half a second. That kicks you off, whether you're hanging or still sliding.
 
-Better pickaxes hang longer and drain slower. Slide into another player fast enough and it hurts them too.
+Better pickaxes hang longer and drain slower.
 
 ---
 
