@@ -303,14 +303,6 @@ public final class GougePhysics {
         Vec3d v = player.getVelocity();
         double speed = Math.abs(v.y);
 
-        if (speed > 1.5) {
-            List<PlayerEntity> nearby = world.getEntitiesByClass(PlayerEntity.class,
-                    player.getBoundingBox().expand(0.8), p -> p != player);
-            for (PlayerEntity target : nearby) {
-                target.damage(world.getDamageSources().playerAttack(player), (float) (speed * 2));
-            }
-        }
-
         double slideSpeed = MathHelper.clamp(
                 SOFT_SLIDE_MAX_SPEED - hardness * SOFT_SLIDE_HARDNESS_SCALE, SOFT_SLIDE_MIN_SPEED, SOFT_SLIDE_MAX_SPEED);
         double slideVy = v.y < 0 ? -slideSpeed : v.y;
