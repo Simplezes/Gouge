@@ -47,9 +47,9 @@ legacyForge {
 }
 
 dependencies {
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly "com.electronwill.night-config:toml:3.6.4"
     compileOnly "com.electronwill.night-config:core:3.6.4"
+    commonAnnotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     commonCompileOnly "com.electronwill.night-config:toml:3.6.4"
     commonCompileOnly "com.electronwill.night-config:core:3.6.4"
 }
@@ -57,12 +57,13 @@ dependencies {
 configurations.commonCompileOnly.extendsFrom(configurations.modDevCompileDependencies)
 
 mixin {
-    add sourceSets.main, 'gouge.refmap.json'
+    add sourceSets.common, 'gouge.refmap.json'
     config 'gouge.mixins.json'
 }
 
 jar {
     from sourceSets.common.output
+    from(layout.buildDirectory.file('mixin/gouge.refmap.json'))
     manifest {
         attributes([
             'MixinConfigs': 'gouge.mixins.json',
