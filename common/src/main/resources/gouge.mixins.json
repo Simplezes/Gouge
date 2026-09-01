@@ -7,7 +7,8 @@
   "mixins": [
     "GougeItemMixin",
     "GougeLivingEntityMixin",
-    "GougeFallDamageMixin"
+    "GougeFallDamageMixin",
+    "GougePlayerTickMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -9,9 +9,25 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
+sourceSets {
+    common {
+        java.srcDirs = [file("../common/src/main/java")]
+        resources.srcDirs = [file("../common/src/main/resources")]
+    }
+    main {
+        compileClasspath += common.output
+        runtimeClasspath += common.output
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
 runs {
     configureEach {
         modSource sourceSets.main
+        modSource sourceSets.common
     }
     client {
         programArguments '--username', 'Dev'
@@ -21,9 +37,15 @@ runs {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    commonImplementation "net.neoforged:neoforge:${neo_version}"
+    compileOnly "com.electronwill.night-config:toml:3.6.4"
+    compileOnly "com.electronwill.night-config:core:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:toml:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:core:3.6.4"
 }
 
 jar {
+    from sourceSets.common.output
     manifest {
         attributes([
             'MixinConfigs': 'gouge.mixins.json',
