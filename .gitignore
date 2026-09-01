@@ -1,12 +1,11 @@
 /.claude
 /.mcp.json
-/build_all.ps1
 
 # Gradle
 .gradle/
+.gradle-guest/
 **/build/
-**/run/
-**/runs/
+**/run*/
 
 # IDE
 .idea/

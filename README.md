@@ -16,7 +16,7 @@ Falling toward a wall? Right-click it with a pickaxe. It bites into the surface 
 
 **Hit dirt or sand** and there's no locking, you just keep sliding, but your landing hits noticeably softer.
 
-**Want off the wall early?** Double-tap crouch within half a second. That kicks you off, whether you're hanging or still sliding.
+**Want off the wall early?** Double-tap crouch within 0.7 seconds. That kicks you off, whether you're hanging or still sliding, on hard blocks or soft ones.
 
 Better pickaxes hang longer and drain slower.
 
