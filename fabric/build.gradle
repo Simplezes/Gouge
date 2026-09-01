@@ -25,6 +25,12 @@ dependencies {
 sourceSets.main.java.srcDir file("../common/src/main/java")
 sourceSets.main.resources.srcDir file("../common/src/main/resources")
 
+loom {
+    mixin {
+        defaultRefmapName = "gouge.refmap.json"
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
