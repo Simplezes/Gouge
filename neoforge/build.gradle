@@ -9,8 +9,12 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+sourceSets.main.java.srcDir file("../common/src/main/java")
+sourceSets.main.resources.srcDir file("../common/src/main/resources")
+
 repositories {
     maven { url = 'https://api.modrinth.com/maven' }
+    mavenCentral()
 }
 
 runs {
@@ -26,6 +30,9 @@ runs {
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     compileOnly "maven.modrinth:parcool:Iabk9mRT"
+    implementation "com.electronwill.night-config:toml:3.8.1"
+    jarJar "com.electronwill.night-config:toml:3.8.1"
+    jarJar "com.electronwill.night-config:core:3.8.1"
 }
 
 jar {

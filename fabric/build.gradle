@@ -8,14 +8,44 @@ group = project.maven_group
 
 repositories {
     maven { url = "https://maven.fabricmc.net/" }
+    mavenCentral()
 }
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}") {
         exclude group: "net.fabricmc.fabric-api", module: "fabric-tag-api-v1"
+    }
+
+    implementation "com.electronwill.night-config:toml:3.8.1"
+    include "com.electronwill.night-config:toml:3.8.1"
+    include "com.electronwill.night-config:core:3.8.1"
+}
+
+sourceSets.main.java.srcDir file("../common/src/main/java")
+sourceSets.main.resources.srcDir file("../common/src/main/resources")
+
+loom {
+    runs {
+        client {
+            client()
+            configName = "Host"
+            runDir = "run"
+            programArgs "--username", "Host"
+        }
+        client2 {
+            client()
+            configName = "Guest"
+            runDir = "run2"
+            programArgs "--username", "Guest"
+        }
+        server {
+            server()
+            configName = "DedicatedServer"
+            runDir = "runserver"
+        }
     }
 }
 

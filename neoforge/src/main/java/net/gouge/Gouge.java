@@ -16,7 +16,9 @@ public class Gouge {
     public static final String MOD_ID = "gouge";
 
     public Gouge(IEventBus modEventBus) {
+        GougePlatform.set(new NeoForgePlatform());
         GougeConfig.load();
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         if (ModList.get().isLoaded("parcool")) {
@@ -24,15 +26,25 @@ public class Gouge {
         }
     }
 
+    private void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.isNoGravity()) {
+            player.setNoGravity(false);
+        }
+    }
+
     private void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            player.setNoGravity(false);
             GougePhysics.cleanup(player.getUUID());
         }
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("gouge")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> source.hasPermission(2)
+                        || (source.getServer().isSingleplayer()
+                            && source.getEntity() instanceof ServerPlayer player
+                            && source.getServer().isSingleplayerOwner(player.getGameProfile())))
                 .then(Commands.literal("reload")
                         .executes(context -> {
                             GougeConfig.load();

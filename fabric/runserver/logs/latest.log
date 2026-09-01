@@ -1,0 +1,83 @@
+[11:43:48] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 1.21.1 with Fabric Loader 0.19.3
+[11:43:48] [main/INFO] (FabricLoader) Loading 43 mods:
+	- fabric-api 0.116.15+1.21.1
+	- fabric-api-base 0.4.42+6573ed8c19
+	- fabric-api-lookup-api-v1 1.6.72+7b3d111d19
+	- fabric-biome-api-v1 13.0.31+d527f9fd19
+	- fabric-block-api-v1 1.1.0+0bc3503219
+	- fabric-block-view-api-v2 1.0.11+ebb2264e19
+	- fabric-command-api-v1 1.2.49+f71b366f19
+	- fabric-command-api-v2 2.2.28+6ced4dd919
+	- fabric-commands-v0 0.2.66+df3654b319
+	- fabric-content-registries-v0 8.0.19+b559734419
+	- fabric-convention-tags-v1 2.1.7+7f945d5b19
+	- fabric-convention-tags-v2 2.12.0+c3656daa19
+	- fabric-crash-report-info-v1 0.2.29+0af3f5a719
+	- fabric-data-attachment-api-v1 1.4.7+5b36e0f719
+	- fabric-data-generation-api-v1 20.3.0+1eb36c0719
+	- fabric-dimensions-v1 4.0.1+65213ef819
+	- fabric-entity-events-v1 1.8.0+2b27e0a419
+	- fabric-events-interaction-v0 0.7.14+ba9dae0619
+	- fabric-game-rule-api-v1 1.0.53+6ced4dd919
+	- fabric-gametest-api-v1 2.0.5+6fc22b9919
+	- fabric-item-api-v1 11.3.0+467044f319
+	- fabric-item-group-api-v1 4.1.7+def88e3a19
+	- fabric-lifecycle-events-v1 2.6.0+0865547519
+	- fabric-loot-api-v2 3.0.15+3f89f5a519
+	- fabric-loot-api-v3 1.0.3+3f89f5a519
+	- fabric-message-api-v1 6.0.14+8aaf3aca19
+	- fabric-networking-api-v1 4.3.1+d30f6a7919
+	- fabric-object-builder-api-v1 15.2.1+40875a9319
+	- fabric-particles-v1 4.0.2+6573ed8c19
+	- fabric-recipe-api-v1 5.0.16+2475392c19
+	- fabric-registry-sync-v0 5.3.2+e3eddc2119
+	- fabric-rendering-data-attachment-v1 0.3.49+73761d2e19
+	- fabric-rendering-fluids-v1 3.1.6+1daea21519
+	- fabric-resource-conditions-api-v1 4.3.0+8dc279b119
+	- fabric-resource-loader-v0 1.3.1+5b5275af19
+	- fabric-screen-handler-api-v1 1.3.91+b559734419
+	- fabric-transfer-api-v1 5.4.4+7b3d111d19
+	- fabric-transitive-access-wideners-v1 6.2.0+45b9699719
+	- fabricloader 0.19.3
+	- gouge 1.4
+	- java 21
+	- minecraft 1.21.1
+	- mixinextras 0.5.4
+[11:43:48] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/C:/Users/Simplezes/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.3+mixin.0.8.7/41c4a3984a80f4679e759fb9f495587acc5cdac7/sponge-mixin-0.17.3+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[11:43:48] [main/INFO] (FabricLoader/Mixin) Loaded Fabric development mappings for mixin remapper!
+[11:43:48] [main/INFO] (FabricLoader/Mixin) Compatibility level set to JAVA_17
+[11:43:49] [main/INFO] (FabricLoader/Mixin) Compatibility level set to JAVA_21
+[11:43:49] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.4).
+[11:43:57] [main/INFO] (Minecraft) Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[11:43:58] [main/INFO] (Minecraft) No existing world data, creating new world
+[11:44:00] [main/INFO] (Minecraft) Loaded 1290 recipes
+[11:44:00] [main/INFO] (Minecraft) Loaded 1399 advancements
+[11:44:00] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 64 new biomes in 1.701 ms
+[11:44:00] [Server thread/INFO] (Minecraft) Starting minecraft server version 1.21.1
+[11:44:00] [Server thread/INFO] (Minecraft) Loading properties
+[11:44:00] [Server thread/INFO] (Minecraft) Default game type: CREATIVE
+[11:44:00] [Server thread/INFO] (Minecraft) Generating keypair
+[11:44:01] [Server thread/INFO] (Minecraft) Starting Minecraft server on *:25565
+[11:44:01] [Server thread/INFO] (Minecraft) Using default channel type
+[11:44:01] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[11:44:01] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
+[11:44:01] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[11:44:01] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
+[11:44:01] [Server thread/INFO] (Minecraft) Preparing level "world"
+[11:44:04] [Server thread/INFO] (Minecraft) Preparing start region for dimension minecraft:overworld
+[11:44:04] [Worker-Main-4/INFO] (Minecraft) Preparing spawn area: 2%
+[11:44:05] [Worker-Main-7/INFO] (Minecraft) Preparing spawn area: 2%
+[11:44:05] [Worker-Main-3/INFO] (Minecraft) Preparing spawn area: 2%
+[11:44:06] [Worker-Main-7/INFO] (Minecraft) Preparing spawn area: 18%
+[11:44:06] [Worker-Main-14/INFO] (Minecraft) Preparing spawn area: 51%
+[11:44:07] [Worker-Main-4/INFO] (Minecraft) Preparing spawn area: 57%
+[11:44:07] [Server thread/INFO] (Minecraft) Time elapsed: 2555 ms
+[11:44:07] [Server thread/INFO] (Minecraft) Done (5.963s)! For help, type "help"
+[11:45:02] [Server thread/INFO] (Minecraft) Guest[/127.0.0.1:64503] logged in with entity id 20 at (-9.5, 80.0, 6.5)
+[11:45:02] [Server thread/INFO] (Minecraft) Guest joined the game
+[11:45:03] [Server thread/INFO] (Minecraft) Host[/127.0.0.1:64504] logged in with entity id 24 at (3.5, 75.0, 2.5)
+[11:45:03] [Server thread/INFO] (Minecraft) Host joined the game
+[11:46:50] [Server thread/INFO] (Minecraft) Host lost connection: Disconnected
+[11:46:50] [Server thread/INFO] (Minecraft) Host left the game
+[11:47:02] [Server thread/INFO] (Minecraft) Guest lost connection: Disconnected
+[11:47:02] [Server thread/INFO] (Minecraft) Guest left the game

@@ -1,0 +1,105 @@
+{
+  // =======================================================
+  // GOUGE CONFIGURATION
+  //
+  // Tip: Save this file and run '/gouge reload' in-game!
+  // Values outside the listed range are clamped on load.
+  // =======================================================
+
+  "mechanics": {
+    // How far from a wall you can be and still grab onto it. Default is 2.5 blocks.
+    // Increase this if grabbing feels too hard to trigger. Range: 0.5 - 32.0
+    "reach": 2.5,
+
+    // After slipping off a wall, how long before you can grab again (in seconds).
+    // Set to 0 to remove the cooldown entirely. Range: 0 - 600
+    "slip_cooldown": 5.0,
+
+    // When you land on a soft block (dirt, grass, leaves, etc.) after sliding,
+    // this multiplies the fall damage you take. 0.5 (50%) means half damage, 0.0 means none.
+    // Range: 0.0 - 1.0
+    "soft_fall_damage": 0.5,
+
+    // How many blocks get the cracking visual effect as you slide down a wall.
+    // Higher = longer crack trail behind you. Set to 0 to disable. Range: 0 - 16
+    "trail_length": 5,
+
+    // Lets your own game predict the wall slide instead of waiting for the server to
+    // correct you every tick. This is what keeps the slide smooth instead of jittery.
+    // This is a client-side setting: it only affects your own screen, never other players.
+    // Turn it off if the slide ever fights you or looks wrong on a modded server.
+    "client_prediction": true
+  },
+
+  "wall_jump": {
+    // How quickly you need to double-tap crouch to trigger the wall jump (in seconds).
+    // Tap crouch once to release, then tap it again within this window to jump.
+    // Works on both hard and soft blocks. Range: 0.05 - 5.0
+    "time_window": 0.7,
+
+    // How hard you get launched away from the wall horizontally when wall jumping.
+    // 1.4 is default. Lower this if ragdoll mods or other mods react badly to the speed change.
+    // Range: 0.0 - 5.0
+    "forward_boost": 1.4,
+
+    // How hard you get launched upward when wall jumping.
+    // 1.1 is default. This is what gives you height on the jump. Range: 0.0 - 5.0
+    "upward_boost": 1.1
+  },
+
+  "enchantments": {
+    // How many extra seconds of hang time you get per level of the Grip enchantment.
+    // Grip II with 2.0 here gives you 4 extra seconds before slipping. Range: 0 - 60
+    "grip_bonus": 2.0,
+
+    // How many seconds are removed from your slip cooldown per level of the Momentum enchantment.
+    // Momentum III with 1.0 here cuts 3 seconds off your cooldown. Range: 0 - 60
+    "momentum_reduction": 1.0
+  },
+
+  // =======================================================
+  // PICKAXE STATS
+  // Controls how long each pickaxe lets you hang and how fast it breaks.
+  // Durability drains while hanging on hard blocks AND while sliding on soft ones.
+  //
+  // Keys can be:
+  //   - A specific item:  "minecraft:diamond_pickaxe"
+  //   - An item tag:      "#c:pickaxes"  (covers all pickaxes from that tag)
+  //   - "fallback"        used if nothing else matches
+  //
+  // Priority order: Specific Item > Tag > fallback
+  // Invalid keys are logged and skipped instead of crashing.
+  // =======================================================
+  "pickaxes": {
+    "minecraft:wooden_pickaxe": {
+      // How long you can hang before slipping (seconds). Range: 0 - 3600
+      "hang_time": 2.0,
+      // How many durability points are drained per second. Range: 0 - 1000
+      "damage_rate": 1
+    },
+    "minecraft:stone_pickaxe": {
+      "hang_time": 4.0,
+      "damage_rate": 2
+    },
+    "minecraft:golden_pickaxe": {
+      "hang_time": 1.5,
+      "damage_rate": 1
+    },
+    "minecraft:iron_pickaxe": {
+      "hang_time": 6.0,
+      "damage_rate": 3
+    },
+    "minecraft:diamond_pickaxe": {
+      "hang_time": 10.0,
+      "damage_rate": 5
+    },
+    "minecraft:netherite_pickaxe": {
+      "hang_time": 15.0,
+      "damage_rate": 7
+    },
+    "fallback": {
+      "hang_time": 3.0,
+      "damage_rate": 2
+    }
+  }
+}

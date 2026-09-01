@@ -15,13 +15,22 @@ public class Gouge {
     public static final String MOD_ID = "gouge";
 
     public Gouge() {
+        GougePlatform.set(new ForgePlatform());
         GougeConfig.load();
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.isNoGravity()) {
+            player.setNoGravity(false);
+        }
+    }
+
+    @SubscribeEvent
     public void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            player.setNoGravity(false);
             GougePhysics.cleanup(player.getUUID());
         }
     }
@@ -29,7 +38,10 @@ public class Gouge {
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("gouge")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> source.hasPermission(2)
+                        || (source.getServer().isSingleplayer()
+                            && source.getEntity() instanceof ServerPlayer player
+                            && source.getServer().isSingleplayerOwner(player.getGameProfile())))
                 .then(Commands.literal("reload")
                         .executes(context -> {
                             GougeConfig.load();
