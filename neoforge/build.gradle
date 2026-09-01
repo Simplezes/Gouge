@@ -30,9 +30,8 @@ runs {
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     compileOnly "maven.modrinth:parcool:wwqfMVm1"
-    implementation "com.electronwill.night-config:toml:3.8.1"
-    jarJar "com.electronwill.night-config:toml:3.8.1"
-    jarJar "com.electronwill.night-config:core:3.8.1"
+    compileOnly "com.electronwill.night-config:toml:3.8.1"
+    compileOnly "com.electronwill.night-config:core:3.8.1"
 }
 
 jar {
