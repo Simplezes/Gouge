@@ -41,13 +41,8 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-    implementation "com.electronwill.night-config:toml:3.8.1"
-    jarJar(group: 'com.electronwill.night-config', name: 'toml', version: '[3.8,3.9)') {
-        jarJar.pin(it, '3.8.1')
-    }
-    jarJar(group: 'com.electronwill.night-config', name: 'core', version: '[3.8,3.9)') {
-        jarJar.pin(it, '3.8.1')
-    }
+    compileOnly "com.electronwill.night-config:toml:3.8.1"
+    compileOnly "com.electronwill.night-config:core:3.8.1"
 }
 
 jar {
@@ -58,5 +53,3 @@ jar {
         ])
     }
 }
-
-build.dependsOn(tasks.named('jarJar'))
