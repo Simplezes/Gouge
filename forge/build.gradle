@@ -12,12 +12,21 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
 
-repositories {
-    maven { url = 'https://cursemaven.com' }
+sourceSets {
+    common {
+        java.srcDirs = [file("../common/src/main/java")]
+        resources.srcDirs = [file("../common/src/main/resources")]
+    }
+    main {
+        compileClasspath += common.output
+        runtimeClasspath += common.output
+    }
 }
 
 repositories {
+    maven { url = 'https://cursemaven.com' }
     maven { url = 'https://api.modrinth.com/maven' }
+    mavenCentral()
 }
 
 minecraft {
@@ -25,11 +34,11 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
-            mods { gouge { source sourceSets.main } }
+            mods { gouge { source sourceSets.main; source sourceSets.common } }
         }
         server {
             workingDirectory project.file('run')
-            mods { gouge { source sourceSets.main } }
+            mods { gouge { source sourceSets.main; source sourceSets.common } }
         }
     }
 }
@@ -47,9 +56,16 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly "maven.modrinth:parcool:H0pXfFO6"
+    compileOnly "com.electronwill.night-config:toml:3.6.4"
+    compileOnly "com.electronwill.night-config:core:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:toml:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:core:3.6.4"
 }
 
+configurations.commonCompileOnly.extendsFrom(configurations.minecraft)
+
 jar {
+    from sourceSets.common.output
     manifest {
         attributes([
             'MixinConfigs': 'gouge.mixins.json',

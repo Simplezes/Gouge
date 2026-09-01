@@ -3,19 +3,21 @@ package net.gouge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
-import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
@@ -26,40 +28,64 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class GougePhysics {
-    private static final double SOFT_SLIDE_MAX_SPEED = 0.5;
-    private static final double SOFT_SLIDE_MIN_SPEED = 0.3;
-    private static final double SOFT_SLIDE_HARDNESS_SCALE = 0.13;
-    private static final double HORIZONTAL_DAMPING = 0.5;
-    private static final float HARD_MATERIAL_HARDNESS = 1.5f;
-    private static final double HARD_FRICTION_BASE = 0.90;
-    private static final double HARD_FRICTION_SCALE = 0.03;
-    private static final double HARD_MIN_FRICTION = 0.55;
-    private static final double HARD_MAX_FRICTION = 0.90;
-    private static final double HANG_LOCK_SPEED = 0.08;
 
-    private static final Map<UUID, int[]> hangData = new HashMap<>();
-    private static final Map<UUID, ArrayDeque<BlockPos>> trails = new HashMap<>();
-    private static final Set<UUID> gougeNoGravity = new HashSet<>();
-    private static final Set<UUID> activeUse = new HashSet<>();
+    static final double SOFT_SLIDE_MAX_SPEED = 0.5;
+    static final double SOFT_SLIDE_MIN_SPEED = 0.3;
+    static final double SOFT_SLIDE_HARDNESS_SCALE = 0.13;
+    static final double HORIZONTAL_DAMPING = 0.5;
+    static final double HARD_FRICTION_BASE = 0.90;
+    static final double HARD_FRICTION_SCALE = 0.03;
+    static final double HARD_MIN_FRICTION = 0.55;
+    static final double HARD_MAX_FRICTION = 0.90;
+    static final double HANG_LOCK_SPEED = 0.08;
+    private static final int CRACK_SLOT_STRIDE = 32;
 
-    private GougePhysics() {}
+    private static final GougeConfig.PickaxeStats FALLBACK_STATS = new GougeConfig.PickaxeStats(3.0, 2);
+
+    private static final Map<UUID, int[]> hangData = new ConcurrentHashMap<>();
+    private static final Map<UUID, ArrayDeque<BlockPos>> trails = new ConcurrentHashMap<>();
+    private static final Map<UUID, Vec3> anchors = new ConcurrentHashMap<>();
+    private static final Set<UUID> gougeNoGravity = ConcurrentHashMap.newKeySet();
+    private static final Set<UUID> activeUse = ConcurrentHashMap.newKeySet();
+
+    private static volatile List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> tagStatsCache;
+
+    private GougePhysics() {
+    }
 
     public static boolean isPickaxe(ItemStack stack) {
         return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
-                || stack.getItem().canPerformAction(stack, net.minecraftforge.common.ToolActions.PICKAXE_DIG);
+                || GougePlatform.get().isPickaxeTool(stack);
+    }
+
+    public static boolean isHardBlock(BlockState state) {
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        String override = GougeConfig.INSTANCE.block_overrides.get(id.toString());
+        if (override != null) {
+            return override.equals("hard");
+        }
+        if (!id.getNamespace().equals("minecraft")) {
+            return true;
+        }
+        return state.requiresCorrectToolForDrops();
+    }
+
+    public static void invalidateCache() {
+        tagStatsCache = null;
     }
 
     public static void cleanup(UUID id) {
         hangData.remove(id);
         trails.remove(id);
+        anchors.remove(id);
         gougeNoGravity.remove(id);
         activeUse.remove(id);
     }
@@ -68,16 +94,35 @@ public final class GougePhysics {
         activeUse.add(id);
     }
 
+    public static void setAnchor(UUID id, Vec3 pos) {
+        anchors.put(id, pos);
+    }
+
     public static boolean isActive(UUID id) {
         return activeUse.contains(id);
     }
 
     public static void checkStale(ServerPlayer player) {
-        if (!gougeNoGravity.contains(player.getUUID())) return;
-        if (!isPickaxe(player.getUseItem())) {
-            player.setNoGravity(false);
-            releaseHang(player.getUUID());
-            clearCrack(player);
+        UUID id = player.getUUID();
+        if (!activeUse.contains(id)) {
+            int[] d = hangData.get(id);
+            if (d != null) {
+                d[0] = -1;
+                d[2] = -1;
+                d[3] = 0;
+                d[4] = 0;
+            }
+            if (trails.containsKey(id)) {
+                clearCrack(player);
+            }
+            if (gougeNoGravity.contains(id)) {
+                player.setNoGravity(false);
+                gougeNoGravity.remove(id);
+            }
+            return;
+        }
+        if (!player.isUsingItem() || !isPickaxe(player.getUseItem())) {
+            stopSliding(player);
         }
     }
 
@@ -88,9 +133,7 @@ public final class GougePhysics {
             d[3] = 0;
             d[4] = 0;
         }
-        releaseHang(player.getUUID());
-        clearCrack(player);
-        player.setNoGravity(false);
+        release(player);
         activeUse.remove(player.getUUID());
     }
 
@@ -100,7 +143,9 @@ public final class GougePhysics {
 
     public static void releaseHang(UUID id) {
         int[] d = hangData.get(id);
-        if (d != null) d[0] = -1;
+        if (d != null) {
+            d[0] = -1;
+        }
         gougeNoGravity.remove(id);
     }
 
@@ -108,42 +153,77 @@ public final class GougePhysics {
         activeUse.remove(id);
     }
 
+    private static void release(ServerPlayer player) {
+        player.setNoGravity(false);
+        releaseHang(player.getUUID());
+        clearCrack(player);
+        anchors.remove(player.getUUID());
+    }
+
     public static void clearCrack(ServerPlayer player) {
         ArrayDeque<BlockPos> trail = trails.remove(player.getUUID());
         if (trail != null) {
             int slot = 0;
-            for (BlockPos p : trail) sendCrack(player, p, -1, slot++);
+            for (BlockPos p : trail) {
+                sendCrack(player, p, -1, slot++);
+            }
         }
     }
 
     private static void sendCrack(ServerPlayer player, BlockPos pos, int stage, int slot) {
-        int entityId = player.getId() + (slot + 1) * 10_000;
+        int entityId = -1 - (player.getId() * CRACK_SLOT_STRIDE + slot);
         player.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, stage));
+    }
+
+    private static int serverTick(ServerPlayer player) {
+        return player.server.getTickCount();
     }
 
     private static int enchLevel(ItemStack stack, Enchantment enchantment) {
         return EnchantmentHelper.getItemEnchantmentLevel(enchantment, stack);
     }
 
-    private static GougeConfig.PickaxeStats getStats(ItemStack stack) {
-        net.minecraft.resources.ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
-        String idStr = id.toString();
-        if (GougeConfig.INSTANCE.pickaxes.containsKey(idStr)) return GougeConfig.INSTANCE.pickaxes.get(idStr);
+    private static List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> tagStats() {
+        List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> cache = tagStatsCache;
+        if (cache != null) {
+            return cache;
+        }
+        List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> built = new ArrayList<>();
         for (var entry : GougeConfig.INSTANCE.pickaxes.entrySet()) {
-            if (entry.getKey().startsWith("#")) {
-                net.minecraft.resources.ResourceLocation tagId = new net.minecraft.resources.ResourceLocation(entry.getKey().substring(1));
-                net.minecraft.tags.TagKey<Item> tagKey = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, tagId);
-                if (stack.is(tagKey)) return entry.getValue();
+            if (!entry.getKey().startsWith("#")) {
+                continue;
+            }
+            ResourceLocation tagId = ResourceLocation.tryParse(entry.getKey().substring(1));
+            if (tagId == null) {
+                GougeConfig.LOGGER.warn("Ignoring invalid pickaxe tag key in gouge.toml: {}", entry.getKey());
+                continue;
+            }
+            built.add(Map.entry(TagKey.create(Registries.ITEM, tagId), entry.getValue()));
+        }
+        tagStatsCache = built;
+        return built;
+    }
+
+    private static GougeConfig.PickaxeStats getStats(ItemStack stack) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        GougeConfig.PickaxeStats direct = GougeConfig.INSTANCE.pickaxes.get(id.toString());
+        if (direct != null) {
+            return direct;
+        }
+        for (var entry : tagStats()) {
+            if (stack.is(entry.getKey())) {
+                return entry.getValue();
             }
         }
-        return GougeConfig.INSTANCE.pickaxes.getOrDefault("fallback", new GougeConfig.PickaxeStats(3.0, 2));
+        GougeConfig.PickaxeStats fallback = GougeConfig.INSTANCE.pickaxes.get("fallback");
+        return fallback != null ? fallback : FALLBACK_STATS;
     }
 
     private static int maxHangTicks(ItemStack stack) {
         GougeConfig.PickaxeStats stats = getStats(stack);
         int baseTicks = (int) (stats.hang_time * 20);
         int bonusTicks = (int) (GougeConfig.INSTANCE.enchantments.grip_bonus * 20);
-        return baseTicks + enchLevel(stack, GougeEnchantments.GRIP.get()) * bonusTicks;
+        return baseTicks + enchLevel(stack, GougeEnchantments.GRIP) * bonusTicks;
     }
 
     public static BlockHitResult raycast(Level world, Player user) {
@@ -153,9 +233,14 @@ public final class GougePhysics {
         BlockHitResult hit = world.clip(new ClipContext(
                 start, start.add(look.scale(reach)),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, user));
-        if (hit.getType() == HitResult.Type.BLOCK) return hit;
+        if (hit.getType() == HitResult.Type.BLOCK) {
+            return hit;
+        }
 
         Vec3 horiz = new Vec3(look.x, 0, look.z).normalize().scale(reach);
+        if (horiz.lengthSqr() < 1.0E-6) {
+            return null;
+        }
         BlockHitResult hHit = world.clip(new ClipContext(
                 start, start.add(horiz),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, user));
@@ -163,9 +248,11 @@ public final class GougePhysics {
     }
 
     public static boolean applyImpactDamage(ItemStack stack, ServerLevel world, ServerPlayer player,
-                                            double downwardSpeed, float hardness) {
+            double downwardSpeed, float hardness) {
         int damage = Math.round((float) (downwardSpeed * Math.min(hardness, 5.0f) * 3));
-        stack.hurtAndBreak(damage, player, item -> {});
+        if (damage > 0) {
+            stack.hurtAndBreak(damage, player, item -> {});
+        }
         return !stack.isEmpty();
     }
 
@@ -173,7 +260,7 @@ public final class GougePhysics {
         Vec3 p = hit.getLocation();
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
-        if (hardness >= HARD_MATERIAL_HARDNESS) {
+        if (isHardBlock(state)) {
             world.playSound(null, pos, sounds.getBreakSound(), SoundSource.PLAYERS, 2.0f, 0.5f);
             world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 20, 0.2, 0.2, 0.2, 0.15);
         } else {
@@ -200,49 +287,62 @@ public final class GougePhysics {
     }
 
     private static boolean tick0(ServerPlayer player, int[] d) {
-        if (player.onGround()) {
-            player.setNoGravity(false);
-            releaseHang(player.getUUID());
-            clearCrack(player);
+        if (player.onGround() || player.isSpectator() || player.getAbilities().flying) {
+            release(player);
             return false;
+        }
+
+        double maxDrift = GougeConfig.INSTANCE.mechanics.max_drift;
+        if (maxDrift > 0) {
+            Vec3 anchor = anchors.get(player.getUUID());
+            if (anchor != null) {
+                double dx = player.getX() - anchor.x;
+                double dz = player.getZ() - anchor.z;
+                if (dx * dx + dz * dz > maxDrift * maxDrift) {
+                    release(player);
+                    return false;
+                }
+            }
         }
 
         ServerLevel world = player.serverLevel();
         BlockHitResult hit = raycast(world, player);
         if (hit == null) {
-            player.setNoGravity(false);
-            releaseHang(player.getUUID());
-            clearCrack(player);
+            release(player);
             return false;
         }
 
         BlockPos pos = hit.getBlockPos();
         BlockState state = world.getBlockState(pos);
-        float hardness = Math.max(0f, state.getDestroySpeed(world, pos));
+        float rawHardness = state.getDestroySpeed(world, pos);
+        if (rawHardness < 0) {
+            release(player);
+            return false;
+        }
+        float hardness = Math.max(0f, rawHardness);
+
+        int now = serverTick(player);
         boolean sneakingNow = player.isShiftKeyDown();
         boolean wasSneaking = d[3] == 1;
         d[3] = sneakingNow ? 1 : 0;
-        boolean onCooldown = d[1] != -1 && player.tickCount < d[1];
 
-        if (!onCooldown && wasSneaking && !sneakingNow) {
-            d[2] = player.tickCount;
+        if (d[1] != -1 && now < d[1]) {
+            release(player);
+            return false;
         }
 
-        if (hardness >= HARD_MATERIAL_HARDNESS) {
-            if (onCooldown) {
-                player.setNoGravity(false);
-                releaseHang(player.getUUID());
-                clearCrack(player);
-                return false;
+        if (wasSneaking && !sneakingNow) {
+            d[2] = now;
+        }
+        if (!wasSneaking && sneakingNow) {
+            int doubleTapTicks = (int) (GougeConfig.INSTANCE.wall_jump.time_window * 20);
+            if (d[2] != -1 && now - d[2] <= doubleTapTicks) {
+                d[2] = -1;
+                return wallKick(player, world, hit, d);
             }
-            if (!wasSneaking && sneakingNow) {
-                int doubleTapTicks = (int) (GougeConfig.INSTANCE.wall_jump.time_window * 20);
-                if (d[2] != -1 && player.tickCount - d[2] <= doubleTapTicks) {
-                    d[2] = -1;
-                    return wallKick(player, world, hit, d);
-                }
-            }
+        }
 
+        if (isHardBlock(state)) {
             d[4] = 0;
             player.setNoGravity(true);
             gougeNoGravity.add(player.getUUID());
@@ -251,84 +351,103 @@ public final class GougePhysics {
             if (Math.abs(v.y) < HANG_LOCK_SPEED) {
                 player.fallDistance = 0.0F;
                 if (d[0] == -1) {
-                    d[0] = player.tickCount + maxHangTicks(player.getUseItem());
+                    d[0] = now + maxHangTicks(player.getUseItem());
                 }
 
-                if (player.tickCount >= d[0]) {
+                if (now >= d[0]) {
                     startCooldown(player, d);
                     spawnSlip(world, hit.getLocation());
-                    clearCrack(player);
-                    releaseHang(player.getUUID());
-                    player.setNoGravity(false);
+                    release(player);
                     return false;
                 }
 
                 player.setDeltaMovement(Vec3.ZERO);
-                player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), Vec3.ZERO));
+                player.hurtMarked = true;
 
-                if (player.tickCount % 20 == 0) {
-                    ItemStack stack = player.getUseItem();
-                    GougeConfig.PickaxeStats stats = getStats(stack);
-                    stack.hurtAndBreak(stats.damage_rate, player, item -> {});
-                    if (stack.isEmpty()) {
-                        releaseHang(player.getUUID());
-                        player.setNoGravity(false);
-                        return false;
-                    }
+                if (now % 20 == 0 && !drain(player)) {
+                    release(player);
+                    return false;
                 }
-                if (player.tickCount % 20 == 10) {
+                if (now % 20 == 10) {
                     world.playSound(null, pos, SoundEvents.CHAIN_STEP, SoundSource.PLAYERS,
                             0.4f, 0.8f + world.getRandom().nextFloat() * 0.2f);
                 }
                 return true;
-            } else {
-                d[0] = -1;
-                double hardFriction = Mth.clamp(
-                        HARD_FRICTION_BASE - hardness * HARD_FRICTION_SCALE, HARD_MIN_FRICTION, HARD_MAX_FRICTION);
-                Vec3 slowed = new Vec3(v.x * HORIZONTAL_DAMPING, v.y * hardFriction, v.z * HORIZONTAL_DAMPING);
-                player.setDeltaMovement(slowed);
-                player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), slowed));
-                updateClimbFx(player, world, hit, pos, state, hardness);
-                return true;
             }
+
+            d[0] = -1;
+            double hardFriction = Mth.clamp(
+                    HARD_FRICTION_BASE - hardness * HARD_FRICTION_SCALE, HARD_MIN_FRICTION, HARD_MAX_FRICTION);
+            player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, v.y * hardFriction, v.z * HORIZONTAL_DAMPING));
+            player.hurtMarked = true;
+            updateClimbFx(player, world, hit, pos, state, hardness, now);
+            return true;
         }
 
         d[0] = -1;
+        Vec3 v = player.getDeltaMovement();
+
+        if (v.y >= 0) {
+            d[4] = 0;
+            player.setNoGravity(false);
+            gougeNoGravity.remove(player.getUUID());
+            updateClimbFx(player, world, hit, pos, state, hardness, now);
+            return true;
+        }
+
         gougeNoGravity.add(player.getUUID());
         player.setNoGravity(true);
         d[4] = 1;
-        Vec3 v = player.getDeltaMovement();
-        double speed = Math.abs(v.y);
+
+        if (now % 20 == 0 && !drain(player)) {
+            release(player);
+            return false;
+        }
 
         double slideSpeed = Mth.clamp(
                 SOFT_SLIDE_MAX_SPEED - hardness * SOFT_SLIDE_HARDNESS_SCALE, SOFT_SLIDE_MIN_SPEED, SOFT_SLIDE_MAX_SPEED);
-        double slideVy = v.y < 0 ? -slideSpeed : v.y;
-        Vec3 slid = new Vec3(v.x * HORIZONTAL_DAMPING, slideVy, v.z * HORIZONTAL_DAMPING);
-        player.setDeltaMovement(slid);
-        player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), slid));
+        player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, -slideSpeed, v.z * HORIZONTAL_DAMPING));
+        player.hurtMarked = true;
 
-        updateClimbFx(player, world, hit, pos, state, hardness);
+        updateClimbFx(player, world, hit, pos, state, hardness, now);
         return true;
     }
 
+    private static boolean drain(ServerPlayer player) {
+        ItemStack stack = player.getUseItem();
+        GougeConfig.PickaxeStats stats = getStats(stack);
+        if (stats.damage_rate > 0) {
+            stack.hurtAndBreak(stats.damage_rate, player, item -> {});
+        }
+        return !stack.isEmpty();
+    }
+
     private static void updateClimbFx(ServerPlayer player, ServerLevel world, BlockHitResult hit,
-                                       BlockPos pos, BlockState state, float hardness) {
-        ArrayDeque<BlockPos> trail = trails.computeIfAbsent(player.getUUID(), k -> new ArrayDeque<>());
+            BlockPos pos, BlockState state, float hardness, int now) {
         int trailLength = GougeConfig.INSTANCE.mechanics.trail_length;
+        if (trailLength <= 0) {
+            if (now % 5 == 0) {
+                spawnJuice(world, hit, state, hardness);
+            }
+            return;
+        }
+        ArrayDeque<BlockPos> trail = trails.computeIfAbsent(player.getUUID(), k -> new ArrayDeque<>());
         if (trail.isEmpty() || !trail.peekFirst().equals(pos)) {
             trail.addFirst(pos);
-            if (trail.size() > trailLength) {
-                sendCrack(player, trail.removeLast(), -1, trailLength);
+            while (trail.size() > trailLength) {
+                sendCrack(player, trail.removeLast(), -1, trail.size());
             }
             int stage = 5;
             int slot = 0;
             for (BlockPos trailPos : trail) {
                 sendCrack(player, trailPos, stage, slot++);
-                if (stage > 1) stage--;
+                if (stage > 1) {
+                    stage--;
+                }
             }
         }
 
-        if (player.tickCount % 5 == 0) {
+        if (now % 5 == 0) {
             spawnJuice(world, hit, state, hardness);
         }
     }
@@ -336,18 +455,16 @@ public final class GougePhysics {
     private static boolean wallKick(ServerPlayer player, ServerLevel world, BlockHitResult hit, int[] d) {
         startCooldown(player, d);
         d[0] = -1;
-        releaseHang(player.getUUID());
-        clearCrack(player);
-        player.setNoGravity(false);
+        d[4] = 0;
+        release(player);
         player.fallDistance = 0.0F;
 
         var dir = hit.getDirection();
         Vec3 normal = new Vec3(dir.getStepX(), dir.getStepY(), dir.getStepZ());
         double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost;
         double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost;
-        Vec3 push = normal.scale(kickH).add(0, kickV, 0);
-        player.setDeltaMovement(push);
-        player.connection.send(new ClientboundSetEntityMotionPacket(player.getId(), push));
+        player.setDeltaMovement(normal.scale(kickH).add(0, kickV, 0));
+        player.hurtMarked = true;
 
         world.playSound(null, hit.getBlockPos(), SoundEvents.PLAYER_ATTACK_KNOCKBACK,
                 SoundSource.PLAYERS, 1.0f, 1.2f);
@@ -358,12 +475,14 @@ public final class GougePhysics {
 
     private static void startCooldown(ServerPlayer player, int[] d) {
         ItemStack stack = player.getUseItem();
-        int momentum = enchLevel(stack, GougeEnchantments.MOMENTUM.get());
+        int momentum = enchLevel(stack, GougeEnchantments.MOMENTUM);
         int baseCooldown = (int) (GougeConfig.INSTANCE.mechanics.slip_cooldown * 20);
         int reduction = (int) (GougeConfig.INSTANCE.enchantments.momentum_reduction * 20);
-        int cooldown = Math.max(20, baseCooldown - momentum * reduction);
-        d[1] = player.tickCount + cooldown;
-        player.getCooldowns().addCooldown(stack.getItem(), cooldown);
+        int cooldown = Math.max(0, baseCooldown - momentum * reduction);
+        d[1] = cooldown > 0 ? serverTick(player) + cooldown : -1;
+        if (cooldown > 0 && !stack.isEmpty()) {
+            player.getCooldowns().addCooldown(stack.getItem(), cooldown);
+        }
     }
 
     private static void spawnSlip(ServerLevel world, Vec3 p) {
@@ -376,7 +495,7 @@ public final class GougePhysics {
         Vec3 p = hit.getLocation();
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
-        if (hardness >= HARD_MATERIAL_HARDNESS) {
+        if (isHardBlock(state)) {
             world.playSound(null, pos, sounds.getHitSound(), SoundSource.PLAYERS,
                     0.6f, 0.6f + world.getRandom().nextFloat() * 0.2f);
             world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.05);

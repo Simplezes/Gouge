@@ -9,6 +9,21 @@ base.archivesName = archives_base_name
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
+sourceSets {
+    common {
+        java.srcDirs = [file("../common/src/main/java")]
+        resources.srcDirs = [file("../common/src/main/resources")]
+    }
+    main {
+        compileClasspath += common.output
+        runtimeClasspath += common.output
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
 legacyForge {
     enable {
         neoForgeVersion = neo_version
@@ -26,13 +41,20 @@ legacyForge {
     mods {
         gouge {
             sourceSet sourceSets.main
+            sourceSet sourceSets.common
         }
     }
 }
 
 dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    compileOnly "com.electronwill.night-config:toml:3.6.4"
+    compileOnly "com.electronwill.night-config:core:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:toml:3.6.4"
+    commonCompileOnly "com.electronwill.night-config:core:3.6.4"
 }
+
+configurations.commonCompileOnly.extendsFrom(configurations.modDevCompileDependencies)
 
 mixin {
     add sourceSets.main, 'gouge.refmap.json'
@@ -40,6 +62,7 @@ mixin {
 }
 
 jar {
+    from sourceSets.common.output
     manifest {
         attributes([
             'MixinConfigs': 'gouge.mixins.json',

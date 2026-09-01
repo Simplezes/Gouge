@@ -1,5 +1,6 @@
 package net.gouge.mixin;
 
+import net.gouge.GougeConfig;
 import net.gouge.GougePhysics;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +26,7 @@ public abstract class GougeItemMixin {
     @Inject(method = "getUseDuration()I", at = @At("HEAD"), cancellable = true)
     private void gouge$getUseDuration(CallbackInfoReturnable<Integer> cir) {
         ItemStack self = (ItemStack) (Object) this;
-        if (GougePhysics.isPickaxe(self)) {
+        if (GougePhysics.isPickaxe(self) && self.getItem().getUseDuration(self) <= 0) {
             cir.setReturnValue(GOUGE_MAX_USE_TICKS);
         }
     }
@@ -34,10 +35,16 @@ public abstract class GougeItemMixin {
     private void gouge$use(Level world, Player user, InteractionHand hand,
                            CallbackInfoReturnable<InteractionResultHolder<ItemStack>> cir) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
-        if (user.onGround() || user.getDeltaMovement().y >= 0) return;
+        if (world.isClientSide || !(world instanceof ServerLevel serverLevel)) return;
+        if (!(user instanceof ServerPlayer player)) return;
+        if (!GougePhysics.isPickaxe(self)) return;
+        if (GougePhysics.isActive(player.getUUID())) return;
+        if (player.onGround() || player.getDeltaMovement().y >= 0) return;
+        if (player.fallDistance < GougeConfig.INSTANCE.mechanics.min_fall_distance) return;
+        if (player.isSpectator() || player.getAbilities().flying) return;
+        if (net.gouge.GougePlatform.get().blocksGouge(player.getUUID())) return;
 
-        BlockHitResult hit = GougePhysics.raycast(world, user);
+        BlockHitResult hit = GougePhysics.raycast(world, player);
         if (hit == null) return;
 
         var pos = hit.getBlockPos();
@@ -45,18 +52,18 @@ public abstract class GougeItemMixin {
         float hardness = state.getDestroySpeed(world, pos);
         if (hardness < 0) return;
 
-        double downwardSpeed = Math.abs(user.getDeltaMovement().y);
-        boolean survived = GougePhysics.applyImpactDamage(
-                self, (ServerLevel) world, (ServerPlayer) user, downwardSpeed, hardness);
+        double downwardSpeed = Math.abs(player.getDeltaMovement().y);
+        boolean survived = GougePhysics.applyImpactDamage(self, serverLevel, player, downwardSpeed, hardness);
         if (!survived) {
             cir.setReturnValue(InteractionResultHolder.fail(self));
             return;
         }
 
-        GougePhysics.spawnImpact((ServerLevel) world, hit, state, hardness);
-        user.startUsingItem(hand);
-        GougePhysics.markActive(user.getUUID());
-        cir.setReturnValue(InteractionResultHolder.success(self));
+        GougePhysics.spawnImpact(serverLevel, hit, state, hardness);
+        GougePhysics.markActive(player.getUUID());
+        GougePhysics.setAnchor(player.getUUID(), player.position());
+        player.startUsingItem(hand);
+        cir.setReturnValue(InteractionResultHolder.consume(self));
     }
 
     @Inject(method = "onUseTick", at = @At("HEAD"), cancellable = true)
