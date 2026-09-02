@@ -95,6 +95,7 @@ public final class GougeClientPhysics {
                         GougePhysics.HARD_MIN_FRICTION, GougePhysics.HARD_MAX_FRICTION);
                 local.setDeltaMovement(new Vec3(
                         v.x * GougePhysics.HORIZONTAL_DAMPING, v.y * friction, v.z * GougePhysics.HORIZONTAL_DAMPING));
+                local.fallDistance = 0.0F;
             }
             return;
         }
