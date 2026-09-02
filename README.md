@@ -24,7 +24,7 @@ Better pickaxes hang longer and drain slower.
 
 ## See it in action
 
-**Soft blocks cut your fall damage roughly in half**
+**Soft blocks cut your fall damage roughly in half, capped so even a marathon slide can't kill you**
 
 <div align="center">
 <img src="https://cdn.modrinth.com/data/cached_images/dcd09984bdb60bb41392e8df04f49c6a7285083b.gif" width="220" alt="no slide, full fall damage">

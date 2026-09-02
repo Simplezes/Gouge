@@ -1,5 +1,6 @@
 package net.gouge.mixin;
 
+import net.gouge.GougeConfig;
 import net.gouge.GougePhysics;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -18,7 +19,12 @@ public abstract class GougeFallDamageMixin {
         if (!((Object) this instanceof ServerPlayer player)) return;
         float multiplier = GougePhysics.fallDamageMultiplier(player.getUUID());
         if (multiplier != 1.0f) {
-            cir.setReturnValue(Math.round(cir.getReturnValue() * multiplier));
+            int damage = Math.round(cir.getReturnValue() * multiplier);
+            double cap = GougeConfig.INSTANCE.mechanics.soft_fall_damage_cap;
+            if (cap > 0) {
+                damage = (int) Math.min(damage, cap);
+            }
+            cir.setReturnValue(damage);
         }
     }
 
