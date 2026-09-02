@@ -379,6 +379,7 @@ public final class GougePhysics {
             double hardFriction = Mth.clamp(
                     HARD_FRICTION_BASE - hardness * HARD_FRICTION_SCALE, HARD_MIN_FRICTION, HARD_MAX_FRICTION);
             player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, v.y * hardFriction, v.z * HORIZONTAL_DAMPING));
+            player.fallDistance = 0.0F;
             player.hurtMarked = true;
             updateClimbFx(player, world, hit, pos, state, hardness, now);
             return true;
