@@ -64,6 +64,7 @@ public class GougeConfig {
         d.mechanics.reach = num(c, "mechanics.reach", d.mechanics.reach);
         d.mechanics.slip_cooldown = num(c, "mechanics.slip_cooldown", d.mechanics.slip_cooldown);
         d.mechanics.soft_fall_damage = num(c, "mechanics.soft_fall_damage", d.mechanics.soft_fall_damage);
+        d.mechanics.soft_fall_damage_cap = num(c, "mechanics.soft_fall_damage_cap", d.mechanics.soft_fall_damage_cap);
         d.mechanics.trail_length = inum(c, "mechanics.trail_length", d.mechanics.trail_length);
         d.mechanics.client_prediction = bool(c, "mechanics.client_prediction", d.mechanics.client_prediction);
         d.mechanics.min_fall_distance = num(c, "mechanics.min_fall_distance", d.mechanics.min_fall_distance);
@@ -125,6 +126,10 @@ public class GougeConfig {
                  When you land on a soft block (dirt, grass, leaves, etc.) after sliding,
                  this multiplies the fall damage you take. 0.5 (50%) means half damage, 0.0 means none.
                  Range: 0.0 - 1.0""");
+        c.set("mechanics.soft_fall_damage_cap", d.mechanics.soft_fall_damage_cap);
+        c.setComment("mechanics.soft_fall_damage_cap", """
+                 Maximum damage a soft-block slide can ever deal, in half-hearts (2 = 1 heart),
+                 no matter how long the slide was. Set to 0 to disable the cap. Range: 0 - 40""");
         c.set("mechanics.trail_length", d.mechanics.trail_length);
         c.setComment("mechanics.trail_length", """
                  How many blocks get the cracking visual effect as you slide down a wall.
@@ -240,6 +245,7 @@ public class GougeConfig {
         c.mechanics.reach = clamp("mechanics.reach", c.mechanics.reach, 0.5, 32.0);
         c.mechanics.slip_cooldown = clamp("mechanics.slip_cooldown", c.mechanics.slip_cooldown, 0.0, 600.0);
         c.mechanics.soft_fall_damage = clamp("mechanics.soft_fall_damage", c.mechanics.soft_fall_damage, 0.0, 1.0);
+        c.mechanics.soft_fall_damage_cap = clamp("mechanics.soft_fall_damage_cap", c.mechanics.soft_fall_damage_cap, 0.0, 40.0);
         c.mechanics.trail_length = (int) clamp("mechanics.trail_length", c.mechanics.trail_length, 0, 16);
         c.mechanics.min_fall_distance = clamp("mechanics.min_fall_distance", c.mechanics.min_fall_distance, 0.0, 32.0);
         c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
@@ -318,6 +324,7 @@ public class GougeConfig {
         public double reach = 2.5;
         public double slip_cooldown = 5.0;
         public double soft_fall_damage = 0.5;
+        public double soft_fall_damage_cap = 6.0;
         public int trail_length = 5;
         public boolean client_prediction = true;
         public double min_fall_distance = 1.5;
