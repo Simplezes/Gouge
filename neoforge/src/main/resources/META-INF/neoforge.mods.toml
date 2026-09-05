@@ -13,14 +13,14 @@ license="MIT"
 [[dependencies.gouge]]
     modId="neoforge"
     type="required"
-    versionRange="[21.4,)"
+    versionRange="[26.1,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.gouge]]
     modId="minecraft"
     type="required"
-    versionRange="[1.21.4,1.22)"
+    versionRange="[26.1,26.3)"
     ordering="NONE"
     side="BOTH"
 

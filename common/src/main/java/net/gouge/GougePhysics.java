@@ -7,8 +7,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,7 +21,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ClipContext;
@@ -66,12 +65,11 @@ public final class GougePhysics {
     }
 
     public static boolean isPickaxe(ItemStack stack) {
-        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
-                || GougePlatform.get().isPickaxeTool(stack);
+        return stack.is(ItemTags.PICKAXES) || GougePlatform.get().isPickaxeTool(stack);
     }
 
     public static boolean isHardBlock(BlockState state) {
-        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         String override = GougeConfig.INSTANCE.block_overrides.get(id.toString());
         if (override != null) {
             return override.equals("hard");
@@ -180,7 +178,7 @@ public final class GougePhysics {
     }
 
     private static int serverTick(ServerPlayer player) {
-        return player.server.getTickCount();
+        return player.level().getServer().getTickCount();
     }
 
     private static EquipmentSlot usedSlot(ServerPlayer player) {
@@ -207,7 +205,7 @@ public final class GougePhysics {
             if (!entry.getKey().startsWith("#")) {
                 continue;
             }
-            ResourceLocation tagId = ResourceLocation.tryParse(entry.getKey().substring(1));
+            Identifier tagId = Identifier.tryParse(entry.getKey().substring(1));
             if (tagId == null) {
                 GougeConfig.LOGGER.warn("Ignoring invalid pickaxe tag key in gouge.toml: {}", entry.getKey());
                 continue;
@@ -219,7 +217,7 @@ public final class GougePhysics {
     }
 
     private static GougeConfig.PickaxeStats getStats(ItemStack stack) {
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         GougeConfig.PickaxeStats direct = GougeConfig.INSTANCE.pickaxes.get(id.toString());
         if (direct != null) {
             return direct;
@@ -319,7 +317,7 @@ public final class GougePhysics {
             }
         }
 
-        ServerLevel world = player.serverLevel();
+        ServerLevel world = player.level();
         BlockHitResult hit = raycast(world, player);
         if (hit == null) {
             release(player);
@@ -502,7 +500,7 @@ public final class GougePhysics {
 
     private static void spawnSlip(ServerLevel world, Vec3 p) {
         BlockPos pos = BlockPos.containing(p);
-        world.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.4f);
+        world.playSound(null, pos, SoundEvents.ITEM_BREAK.value(), SoundSource.PLAYERS, 1.0f, 1.4f);
         world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 30, 0.3, 0.3, 0.3, 0.2);
     }
 

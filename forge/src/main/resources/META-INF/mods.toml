@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[54,)"
+loaderVersion="[64,)"
 license="MIT"
 
 [[mods]]
@@ -13,13 +13,13 @@ license="MIT"
 [[dependencies.gouge]]
     modId="forge"
     mandatory=true
-    versionRange="[54,)"
+    versionRange="[64,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.gouge]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.21.4,1.22)"
+    versionRange="[26.1,26.3)"
     ordering="NONE"
     side="BOTH"
