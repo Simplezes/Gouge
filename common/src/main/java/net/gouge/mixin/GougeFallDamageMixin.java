@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class GougeFallDamageMixin {
 
     @Inject(method = "calculateFallDamage", at = @At("RETURN"), cancellable = true)
-    private void gouge$calculateFallDamage(float fallDistance, float damageMultiplier, CallbackInfoReturnable<Integer> cir) {
+    private void gouge$calculateFallDamage(double fallDistance, float damageMultiplier, CallbackInfoReturnable<Integer> cir) {
         if (!((Object) this instanceof ServerPlayer player)) return;
         float multiplier = GougePhysics.fallDamageMultiplier(player.getUUID());
         if (multiplier != 1.0f) {

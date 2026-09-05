@@ -12,7 +12,7 @@ public abstract class GougePlayerTickMixin {
     @Inject(method = "tick", at = @At("HEAD"))
     private void gouge$clientTick(CallbackInfo ci) {
         Player self = (Player) (Object) this;
-        if (self.level().isClientSide) {
+        if (self.level().isClientSide()) {
             net.gouge.GougeClientPhysics.clientTick(self);
         }
     }

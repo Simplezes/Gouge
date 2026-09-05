@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 public class Gouge implements ModInitializer {
     public static final String MOD_ID = "gouge";
@@ -29,10 +30,10 @@ public class Gouge implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("gouge")
-                    .requires(source -> source.hasPermission(2)
-                            || (source.getServer().isSingleplayer()
+                    .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
+                            || (source.getServer() != null && source.getServer().isSingleplayer()
                                 && source.getEntity() instanceof ServerPlayer player
-                                && source.getServer().isSingleplayerOwner(player.getGameProfile())))
+                                && source.getServer().isSingleplayerOwner(player.nameAndId())))
                     .then(Commands.literal("reload")
                             .executes(context -> {
                                 GougeConfig.load();

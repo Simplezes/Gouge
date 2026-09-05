@@ -38,7 +38,7 @@ public abstract class GougeItemMixin {
     private void gouge$use(Level world, Player user, InteractionHand hand,
                            CallbackInfoReturnable<InteractionResult> cir) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !(world instanceof ServerLevel serverLevel)) return;
+        if (world.isClientSide() || !(world instanceof ServerLevel serverLevel)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isPickaxe(self)) return;
         if (GougePhysics.isActive(player.getUUID())) return;
@@ -73,7 +73,7 @@ public abstract class GougeItemMixin {
     @Inject(method = "onUseTick", at = @At("HEAD"), cancellable = true)
     private void gouge$onUseTick(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
+        if (world.isClientSide() || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isActive(player.getUUID())) return;
         if (!GougePhysics.tick(player)) {
@@ -86,7 +86,7 @@ public abstract class GougeItemMixin {
     @Inject(method = "releaseUsing", at = @At("HEAD"), cancellable = true)
     private void gouge$releaseUsing(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
+        if (world.isClientSide() || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isActive(player.getUUID())) return;
         GougePhysics.stopSliding(player);
