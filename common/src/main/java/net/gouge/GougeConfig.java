@@ -105,7 +105,7 @@ public class GougeConfig {
         return d;
     }
 
-    private static void write(CommentedFileConfig c, ConfigData d) {
+    private static void write(CommentedConfig c, ConfigData d) {
         c.setComment("mechanics", """
                  =======================================================
                  GOUGE CONFIGURATION

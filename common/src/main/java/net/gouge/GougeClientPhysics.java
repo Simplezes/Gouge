@@ -23,7 +23,7 @@ public final class GougeClientPhysics {
         if (local == null || player != local) {
             return;
         }
-        if (mc.screen != null || !mc.options.keyUse.isDown()) {
+        if (mc.gui.screen() != null || !mc.options.keyUse.isDown()) {
             stop(local);
             return;
         }
