@@ -31,7 +31,7 @@ public final class GougeClientPhysics {
             stop(local);
             return;
         }
-        if (!predicting && local.fallDistance < GougeConfig.INSTANCE.mechanics.min_fall_distance) {
+        if (!predicting && !GougePhysics.hasFallClearance(local.level(), local, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
             stop(local);
             return;
         }
