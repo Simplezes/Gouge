@@ -69,6 +69,7 @@ public class GougeConfig {
         d.mechanics.client_prediction = bool(c, "mechanics.client_prediction", d.mechanics.client_prediction);
         d.mechanics.min_fall_distance = num(c, "mechanics.min_fall_distance", d.mechanics.min_fall_distance);
         d.mechanics.max_drift = num(c, "mechanics.max_drift", d.mechanics.max_drift);
+        d.mechanics.cling_everything = bool(c, "mechanics.cling_everything", d.mechanics.cling_everything);
 
         d.wall_jump.time_window = num(c, "wall_jump.time_window", d.wall_jump.time_window);
         d.wall_jump.forward_boost = num(c, "wall_jump.forward_boost", d.wall_jump.forward_boost);
@@ -142,14 +143,20 @@ public class GougeConfig {
                  Turn it off if the slide ever fights you or looks wrong on a modded server.""");
         c.set("mechanics.min_fall_distance", d.mechanics.min_fall_distance);
         c.setComment("mechanics.min_fall_distance", """
-                 How far you need to have already fallen before you can grab a wall (in blocks).
-                 Stops a simple jump from letting you attach instantly - you actually need to be
-                 falling first. Range: 0.0 - 32.0""");
+                 How much open air needs to be below you to grab a wall (in blocks), checked with
+                 an instant raycast rather than waiting for you to actually fall that far. Stops a
+                 simple jump/step from letting you attach. Range: 0.0 - 32.0""");
         c.set("mechanics.max_drift", d.mechanics.max_drift);
         c.setComment("mechanics.max_drift", """
                  How far you can drift sideways away from the spot you grabbed before you slip off
                  (in blocks). Stops you from walking/gliding along a wall indefinitely.
                  Range: 0.0 - 16.0""");
+        c.set("mechanics.cling_everything", d.mechanics.cling_everything);
+        c.setComment("mechanics.cling_everything", """
+                 Treat every block as a hard (hang-able) block, regardless of the vanilla
+                 hard/soft default or the block_overrides list below. Turn this on if you
+                 just want to cling to anything - leaves, wood, dirt, everything - without
+                 listing each block individually. block_overrides entries still win over this.""");
 
         c.set("wall_jump.time_window", d.wall_jump.time_window);
         c.setComment("wall_jump.time_window", """
@@ -202,7 +209,7 @@ public class GougeConfig {
             }
         }
 
-        c.set("block_overrides", c.createSubConfig());
+        c.set("block_overrides", CommentedConfig.inMemory());
         c.setComment("block_overrides", """
                  =======================================================
                  BLOCK OVERRIDES
@@ -329,6 +336,7 @@ public class GougeConfig {
         public boolean client_prediction = true;
         public double min_fall_distance = 1.5;
         public double max_drift = 1.5;
+        public boolean cling_everything = false;
     }
 
     public static class WallJump {
