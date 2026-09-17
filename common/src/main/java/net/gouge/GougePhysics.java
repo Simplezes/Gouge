@@ -57,6 +57,7 @@ public final class GougePhysics {
     private static final Map<UUID, int[]> hangData = new ConcurrentHashMap<>();
     private static final Map<UUID, ArrayDeque<BlockPos>> trails = new ConcurrentHashMap<>();
     private static final Map<UUID, Vec3> anchors = new ConcurrentHashMap<>();
+    private static final Map<UUID, Double> lastY = new ConcurrentHashMap<>();
     private static final Set<UUID> gougeNoGravity = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> activeUse = ConcurrentHashMap.newKeySet();
 
@@ -76,6 +77,9 @@ public final class GougePhysics {
         if (override != null) {
             return override.equals("hard");
         }
+        if (GougeConfig.INSTANCE.mechanics.cling_everything) {
+            return true;
+        }
         if (!id.getNamespace().equals("minecraft")) {
             return true;
         }
@@ -90,6 +94,7 @@ public final class GougePhysics {
         hangData.remove(id);
         trails.remove(id);
         anchors.remove(id);
+        lastY.remove(id);
         gougeNoGravity.remove(id);
         activeUse.remove(id);
     }
@@ -162,6 +167,18 @@ public final class GougePhysics {
         releaseHang(player.getUUID());
         clearCrack(player);
         anchors.remove(player.getUUID());
+        lastY.remove(player.getUUID());
+    }
+
+    private static double actualVerticalSpeed(ServerPlayer player) {
+        UUID id = player.getUUID();
+        double y = player.getY();
+        Double prev = lastY.put(id, y);
+        if (prev == null) {
+            Vec3 anchor = anchors.get(id);
+            prev = anchor != null ? anchor.y : y;
+        }
+        return y - prev;
     }
 
     public static void clearCrack(ServerPlayer player) {
@@ -261,6 +278,17 @@ public final class GougePhysics {
         return hHit.getType() == HitResult.Type.BLOCK ? hHit : null;
     }
 
+    public static boolean hasFallClearance(Level world, Player player, double minDistance) {
+        if (minDistance <= 0) {
+            return true;
+        }
+        Vec3 feet = player.position();
+        BlockHitResult hit = world.clip(new ClipContext(
+                feet, feet.subtract(0, minDistance, 0),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return hit.getType() != HitResult.Type.BLOCK;
+    }
+
     public static boolean applyImpactDamage(ItemStack stack, ServerLevel world, ServerPlayer player,
             double downwardSpeed, float hardness, EquipmentSlot slot) {
         int damage = Math.round((float) (downwardSpeed * Math.min(hardness, 5.0f) * 3));
@@ -356,13 +384,15 @@ public final class GougePhysics {
             }
         }
 
+        double realVy = actualVerticalSpeed(player);
+
         if (isHardBlock(state)) {
             d[4] = 0;
             player.setNoGravity(true);
             gougeNoGravity.add(player.getUUID());
             Vec3 v = player.getDeltaMovement();
 
-            if (Math.abs(v.y) < HANG_LOCK_SPEED) {
+            if (Math.abs(realVy) < HANG_LOCK_SPEED) {
                 player.fallDistance = 0.0F;
                 if (d[0] == -1) {
                     d[0] = now + maxHangTicks(player.getUseItem());
@@ -392,7 +422,7 @@ public final class GougePhysics {
             d[0] = -1;
             double hardFriction = Mth.clamp(
                     HARD_FRICTION_BASE - hardness * HARD_FRICTION_SCALE, HARD_MIN_FRICTION, HARD_MAX_FRICTION);
-            player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, v.y * hardFriction, v.z * HORIZONTAL_DAMPING));
+            player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, Math.min(realVy, 0) * hardFriction, v.z * HORIZONTAL_DAMPING));
             player.fallDistance = 0.0F;
             player.hurtMarked = true;
             updateClimbFx(player, world, hit, pos, state, hardness, now);
@@ -402,7 +432,7 @@ public final class GougePhysics {
         d[0] = -1;
         Vec3 v = player.getDeltaMovement();
 
-        if (v.y >= 0) {
+        if (realVy >= 0) {
             d[4] = 0;
             player.setNoGravity(false);
             gougeNoGravity.remove(player.getUUID());

@@ -8,7 +8,7 @@ license="MIT"
     displayName="Gouge"
     description="Slam your pickaxe into a wall to save yourself from a fatal fall."
     authors="Simplezes"
-    logoFile="icon.png"
+    iconFile="icon.png"
 
 [[dependencies.gouge]]
     modId="neoforge"
