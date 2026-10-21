@@ -12,9 +12,9 @@
   },
   "mixins": ["gouge.mixins.json"],
   "depends": {
-    "fabricloader": ">=0.19.0",
+    "fabricloader": ">=0.16.0",
     "fabric-api": "*",
-    "minecraft": "26.2"
+    "minecraft": "1.21.11"
   }
 }
 

@@ -7,7 +7,7 @@ version = mod_version
 group = maven_group
 base.archivesName = archives_base_name
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 sourceSets.main.output.resourcesDir = sourceSets.main.output.classesDirs.singleFile
 
