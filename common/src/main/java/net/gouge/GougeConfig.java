@@ -70,10 +70,21 @@ public class GougeConfig {
         d.mechanics.min_fall_distance = num(c, "mechanics.min_fall_distance", d.mechanics.min_fall_distance);
         d.mechanics.max_drift = num(c, "mechanics.max_drift", d.mechanics.max_drift);
         d.mechanics.cling_everything = bool(c, "mechanics.cling_everything", d.mechanics.cling_everything);
+        d.mechanics.dual_grip_enabled = bool(c, "mechanics.dual_grip_enabled", d.mechanics.dual_grip_enabled);
+        d.mechanics.dual_grip_multiplier = num(c, "mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
+        d.mechanics.unlimited_grip = bool(c, "mechanics.unlimited_grip", d.mechanics.unlimited_grip);
 
         d.wall_jump.time_window = num(c, "wall_jump.time_window", d.wall_jump.time_window);
         d.wall_jump.forward_boost = num(c, "wall_jump.forward_boost", d.wall_jump.forward_boost);
         d.wall_jump.upward_boost = num(c, "wall_jump.upward_boost", d.wall_jump.upward_boost);
+
+        d.climbing.enabled = bool(c, "climbing.enabled", d.climbing.enabled);
+        d.climbing.requires_dual = bool(c, "climbing.requires_dual", d.climbing.requires_dual);
+        d.climbing.speed = num(c, "climbing.speed", d.climbing.speed);
+        d.climbing.reach = num(c, "climbing.reach", d.climbing.reach);
+        d.climbing.allow_diagonal = bool(c, "climbing.allow_diagonal", d.climbing.allow_diagonal);
+        d.climbing.durability_cost = inum(c, "climbing.durability_cost", d.climbing.durability_cost);
+        d.climbing.damage_both_tools = bool(c, "climbing.damage_both_tools", d.climbing.damage_both_tools);
 
         d.enchantments.grip_bonus = num(c, "enchantments.grip_bonus", d.enchantments.grip_bonus);
         d.enchantments.momentum_reduction = num(c, "enchantments.momentum_reduction", d.enchantments.momentum_reduction);
@@ -157,6 +168,52 @@ public class GougeConfig {
                  hard/soft default or the block_overrides list below. Turn this on if you
                  just want to cling to anything - leaves, wood, dirt, everything - without
                  listing each block individually. block_overrides entries still win over this.""");
+        c.set("mechanics.dual_grip_enabled", d.mechanics.dual_grip_enabled);
+        c.setComment("mechanics.dual_grip_enabled", """
+                 Enables or disables dual-pickaxe grip. When holding a qualifying pickaxe
+                 in both hands, your grip duration is extended by the multiplier below.""");
+        c.set("mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
+        c.setComment("mechanics.dual_grip_multiplier", """
+                 Multiplier applied to hang time when gripping with pickaxes in both hands.
+                 1.5 means 50% longer hang time. Range: 1.0 - 10.0""");
+        c.set("mechanics.unlimited_grip", d.mechanics.unlimited_grip);
+        c.setComment("mechanics.unlimited_grip", """
+                 Sandbox setting: allows infinite hang duration on walls without slipping.
+                 Disabled by default (false). Durability drain still applies unless damage_rate is 0.""");
+
+        c.setComment("climbing", """
+                 =======================================================
+                 CLIMBING SETTINGS
+                 Controls optional pickaxe climbing mechanics.
+                 =======================================================""");
+        c.set("climbing.enabled", d.climbing.enabled);
+        c.setComment("climbing.enabled", """
+                 Enables or disables climbing independently. When enabled, holding Space
+                 while gripping a wall lets you climb up the surface.""");
+        c.set("climbing.requires_dual", d.climbing.requires_dual);
+        c.setComment("climbing.requires_dual", """
+                 If true, climbing requires holding a pickaxe in both hands. If false,
+                 a single pickaxe is sufficient to climb.""");
+        c.set("climbing.speed", d.climbing.speed);
+        c.setComment("climbing.speed", """
+                 Upward movement speed while climbing (in blocks per tick).
+                 Default is 0.08. Range: 0.01 - 0.5""");
+        c.set("climbing.reach", d.climbing.reach);
+        c.setComment("climbing.reach", """
+                 Maximum wall reach distance allowed while climbing (in blocks).
+                 Default is 2.5. Range: 0.5 - 32.0""");
+        c.set("climbing.allow_diagonal", d.climbing.allow_diagonal);
+        c.setComment("climbing.allow_diagonal", """
+                 Allows moving sideways along the wall while climbing (diagonal climbing).
+                 Default is false (vertical only).""");
+        c.set("climbing.durability_cost", d.climbing.durability_cost);
+        c.setComment("climbing.durability_cost", """
+                 Extra durability drained per second while actively climbing.
+                 Default is 1. Range: 0 - 100""");
+        c.set("climbing.damage_both_tools", d.climbing.damage_both_tools);
+        c.setComment("climbing.damage_both_tools", """
+                 If true and two pickaxes are held, climbing durability damage is dealt
+                 to both pickaxes. If false, only the active tool takes damage.""");
 
         c.set("wall_jump.time_window", d.wall_jump.time_window);
         c.setComment("wall_jump.time_window", """
@@ -242,6 +299,9 @@ public class GougeConfig {
         if (c.enchantments == null) {
             c.enchantments = new Enchantments();
         }
+        if (c.climbing == null) {
+            c.climbing = new Climbing();
+        }
         if (c.pickaxes == null) {
             c.pickaxes = new ConfigData().pickaxes;
         }
@@ -256,10 +316,15 @@ public class GougeConfig {
         c.mechanics.trail_length = (int) clamp("mechanics.trail_length", c.mechanics.trail_length, 0, 16);
         c.mechanics.min_fall_distance = clamp("mechanics.min_fall_distance", c.mechanics.min_fall_distance, 0.0, 32.0);
         c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
+        c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
 
         c.wall_jump.time_window = clamp("wall_jump.time_window", c.wall_jump.time_window, 0.05, 5.0);
         c.wall_jump.forward_boost = clamp("wall_jump.forward_boost", c.wall_jump.forward_boost, 0.0, 5.0);
         c.wall_jump.upward_boost = clamp("wall_jump.upward_boost", c.wall_jump.upward_boost, 0.0, 5.0);
+
+        c.climbing.speed = clamp("climbing.speed", c.climbing.speed, 0.01, 0.5);
+        c.climbing.reach = clamp("climbing.reach", c.climbing.reach, 0.5, 32.0);
+        c.climbing.durability_cost = (int) clamp("climbing.durability_cost", c.climbing.durability_cost, 0, 100);
 
         c.enchantments.grip_bonus = clamp("enchantments.grip_bonus", c.enchantments.grip_bonus, 0.0, 60.0);
         c.enchantments.momentum_reduction = clamp("enchantments.momentum_reduction", c.enchantments.momentum_reduction, 0.0, 60.0);
@@ -312,6 +377,7 @@ public class GougeConfig {
         public Mechanics mechanics = new Mechanics();
         public WallJump wall_jump = new WallJump();
         public Enchantments enchantments = new Enchantments();
+        public Climbing climbing = new Climbing();
         public Map<String, PickaxeStats> pickaxes = new LinkedHashMap<>();
         public Map<String, String> block_overrides = new LinkedHashMap<>();
 
@@ -337,6 +403,20 @@ public class GougeConfig {
         public double min_fall_distance = 1.5;
         public double max_drift = 1.5;
         public boolean cling_everything = false;
+        public boolean dual_grip_enabled = true;
+        public double dual_grip_multiplier = 1.5;
+        public boolean unlimited_grip = false;
+    }
+
+    public static class Climbing {
+
+        public boolean enabled = true;
+        public boolean requires_dual = true;
+        public double speed = 0.08;
+        public double reach = 2.5;
+        public boolean allow_diagonal = false;
+        public int durability_cost = 1;
+        public boolean damage_both_tools = true;
     }
 
     public static class WallJump {
