@@ -39,6 +39,7 @@ public abstract class GougeItemMixin {
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isPickaxe(self)) return;
         if (GougePhysics.isActive(player.getUUID())) return;
+        if (GougePhysics.hasMantled(player)) return;
         if (player.onGround() || player.getDeltaMovement().y >= 0) return;
         if (!GougePhysics.hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) return;
         if (player.isSpectator() || player.getAbilities().flying) return;
@@ -60,7 +61,7 @@ public abstract class GougeItemMixin {
         }
 
         GougePhysics.spawnImpact(serverLevel, hit, state, hardness);
-        GougePhysics.markActive(player.getUUID());
+        GougePhysics.markActive(player.getUUID(), hand);
         GougePhysics.setAnchor(player.getUUID(), player.position());
         player.startUsingItem(hand);
         cir.setReturnValue(InteractionResultHolder.consume(self));
@@ -85,7 +86,10 @@ public abstract class GougeItemMixin {
         if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isActive(player.getUUID())) return;
-        GougePhysics.stopSliding(player);
+        if (GougePhysics.handOverHand(player) == null) {
+            GougePhysics.noteReleaseAtLedge(player);
+            GougePhysics.stopSliding(player);
+        }
         ci.cancel();
     }
 }
