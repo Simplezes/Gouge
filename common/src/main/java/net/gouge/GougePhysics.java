@@ -104,12 +104,29 @@ public final class GougePhysics {
         return new Vec3(fx * speed, 0.47, fz * speed);
     }
 
+    private record HeldInput(int tick, boolean jump, float strafe) {
+    }
+
+    private static final Map<UUID, HeldInput> heldInputs = new ConcurrentHashMap<>();
+
+    // vanilla only applies player-input packets to riders before 1.21.2, so the server records them itself
+    public static void recordInput(ServerPlayer player, float strafe, boolean jump) {
+        heldInputs.put(player.getUUID(), new HeldInput(serverTick(player), jump, Math.signum(strafe)));
+    }
+
+    private static HeldInput freshInput(ServerPlayer player) {
+        HeldInput in = heldInputs.get(player.getUUID());
+        return in != null && serverTick(player) - in.tick() <= 3 ? in : null;
+    }
+
     public static boolean isJumpHeld(ServerPlayer player) {
-        return ((net.gouge.mixin.GougeLivingAccessor) player).gouge$isJumping();
+        HeldInput in = freshInput(player);
+        return in != null && in.jump();
     }
 
     public static float strafeIntent(ServerPlayer player) {
-        return Math.signum(player.xxa);
+        HeldInput in = freshInput(player);
+        return in == null ? 0.0F : in.strafe();
     }
 
     public static final int MANTLE_REGRAB_TICKS = 20;

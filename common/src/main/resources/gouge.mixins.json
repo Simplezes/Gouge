@@ -9,7 +9,8 @@
     "GougeLivingAccessor",
     "GougeLivingEntityMixin",
     "GougeFallDamageMixin",
-    "GougePlayerTickMixin"
+    "GougePlayerTickMixin",
+    "GougeServerInputMixin"
   ],
   "injectors": {
     "defaultRequire": 1
