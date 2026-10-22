@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -73,6 +74,9 @@ public final class GougeClientPhysics {
                 return;
             }
         }
+
+        local.connection.send(new ServerboundPlayerInputPacket(
+                local.input.leftImpulse, local.input.forwardImpulse, local.input.jumping, local.input.shiftKeyDown));
 
         BlockHitResult hit = GougePhysics.raycast(local.level(), local);
         if (predicting && pin != null && pinDir != null && mc.options.keyJump.isDown()
