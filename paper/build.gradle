@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+version = project.plugin_version
+group = 'net.gouge'
+
+repositories {
+    maven { url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/" }
+    mavenCentral()
+}
+
+dependencies {
+    // Spigot API only: the same jar then runs on Spigot, Paper and Paper forks.
+    compileOnly "org.spigotmc:spigot-api:${project.spigot_api}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+// Java 17 bytecode so the same jar loads on 1.20.x servers.
+tasks.withType(JavaCompile).configureEach { options.release = 17 }
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("plugin.yml") {
+        expand "version": project.version
+    }
+}

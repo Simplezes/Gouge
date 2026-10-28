@@ -1,0 +1,14 @@
+name: Gouge
+version: ${version}
+main: net.gouge.paper.GougePlugin
+api-version: "1.20"
+description: Server-side preview port of the Gouge pickaxe wall-grip mod.
+author: Simplezes
+commands:
+  gouge:
+    description: Gouge admin commands
+    usage: /gouge reload
+    permission: gouge.reload
+permissions:
+  gouge.reload:
+    default: op

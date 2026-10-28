@@ -1,0 +1,99 @@
+# =======================================================
+# GOUGE CONFIGURATION (Paper preview)
+# Values mirror the mod's gouge.toml defaults.
+# Restart the server to apply changes.
+# =======================================================
+
+# Log every right-click and grab attempt to the console. Leave off unless debugging.
+debug: false
+
+# How far from a wall you can be and still grab onto it (blocks). Range: 0.5 - 32.0
+reach: 2.5
+
+# After slipping off a wall, how long before you can grab again (seconds). 0 = no cooldown.
+slip_cooldown: 5.0
+
+# Fall damage multiplier when landing after sliding down a soft block. 0.5 = half, 0.0 = none.
+soft_fall_damage: 0.5
+
+# Maximum damage a soft-block slide can deal, in half-hearts (2 = 1 heart). 0 = no cap.
+soft_fall_damage_cap: 6.0
+
+# How many blocks get the cracking visual effect as you slide down a wall.
+# Higher = longer crack trail. Set to 0 to DISABLE the crack effect. Range: 0 - 16
+trail_length: 5
+
+# Open air needed below you to grab a wall (blocks). Stops a simple jump from attaching.
+min_fall_distance: 1.5
+
+# How far you can drift sideways from where you grabbed before slipping off (blocks). 0 = unlimited.
+max_drift: 1.5
+
+# Treat every block as hard (hang-able), including leaves, wood, dirt, etc.
+cling_everything: false
+
+# Holding a pickaxe in both hands extends hang time by the multiplier below.
+dual_grip_enabled: true
+dual_grip_multiplier: 1.5
+
+# Sandbox: infinite hang time. Durability drain still applies unless damage_rate is 0.
+unlimited_grip: false
+
+# Server ticks without a right-click packet before the grip counts as released.
+# The client re-sends the use packet about every 4 ticks while right-click is held.
+# Raise this if the grip drops randomly on laggy connections.
+use_heartbeat_ticks: 6
+
+climbing:
+  # Look up while gripping a wall to climb it.
+  enabled: true
+  # Pitch in degrees you must look past to climb (negative = up, -90 = straight up).
+  look_pitch: -60.0
+  # true = needs a pickaxe in both hands, false = one is enough.
+  requires_dual: true
+  # Upward speed in blocks per tick. Range: 0.01 - 0.5
+  speed: 0.08
+  # Max wall distance allowed while climbing (blocks).
+  reach: 2.5
+  # Extra durability drained per second while climbing.
+  durability_cost: 1
+  # Two pickaxes held: damage both while climbing (true) or only the active one (false).
+  damage_both_tools: true
+
+wall_jump:
+  # Double-tap crouch within this many seconds to kick off the wall. Range: 0.05 - 5.0
+  time_window: 0.7
+  # Launch strength away from the wall. Range: 0.0 - 5.0
+  forward_boost: 1.4
+  # Launch strength upward. Range: 0.0 - 5.0
+  upward_boost: 1.1
+
+# Needs the mod's gouge:grip / gouge:momentum enchantment datapack on the server.
+enchantments:
+  # Extra seconds of hang time per Grip level.
+  grip_bonus: 2.0
+  # Seconds removed from the slip cooldown per Momentum level.
+  momentum_reduction: 1.0
+
+# Per pickaxe: [hang_time in seconds, damage_rate in durability per second].
+# Keys can be:
+#   - A specific item:  "minecraft:diamond_pickaxe"
+#   - An item tag:      "#c:pickaxes" (covers every pickaxe in that tag, including modded ones)
+#   - "fallback"        used for any pickaxe not matched above
+# Priority: specific item > tag > fallback. An item listed here counts as a pickaxe.
+pickaxes:
+  "minecraft:wooden_pickaxe": [2.0, 1]
+  "minecraft:stone_pickaxe": [4.0, 2]
+  "minecraft:golden_pickaxe": [1.5, 1]
+  "minecraft:iron_pickaxe": [6.0, 3]
+  "minecraft:diamond_pickaxe": [10.0, 5]
+  "minecraft:netherite_pickaxe": [15.0, 7]
+  fallback: [3.0, 2]
+
+# Decides whether a block hangs like solid rock ("hard") or lets you slide down ("soft").
+# By default a block is hard if it requires the correct tool for drops (stone, ores, bricks...)
+# and soft otherwise (sand, dirt, wood, leaves...). Add entries to override, e.g.:
+#   "minecraft:sandstone": hard
+#   "minecraft:oak_log": hard
+# Values must be "hard" or "soft". These win over cling_everything.
+block_overrides: {}
