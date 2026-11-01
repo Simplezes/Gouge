@@ -98,7 +98,7 @@ Tested and confirmed to work seamlessly alongside:
 * **Tinkers' Construct** *(Credit: Elizabeth_Mahiko)*
 * **Mekanism / Mekanism Tools**
 * **Silent Gear**
-* **ParCool** *(Credit: Brizo)*
+* **ParCool** *(Credit: Brizo)* – 3.x and 4.x (4.x on MC 1.21.1 / 1.20.1)
 * **Zipline: Rezipped** *(Credit: greetedsnow)*
 * **Wall-Jump TXF** *(credit: ANormalRaft)*
 

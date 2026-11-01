@@ -1,6 +1,7 @@
 package net.gouge;
 
 import com.mojang.brigadier.Command;
+import com.mojang.logging.LogUtils;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,7 +24,11 @@ public class Gouge {
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         if (ModList.get().isLoaded("parcool")) {
-            net.gouge.extern.parcool.ParCoolCompat.register();
+            try {
+                net.gouge.extern.parcool.ParCoolCompat.register();
+            } catch (LinkageError e) {
+                LogUtils.getLogger().warn("[Gouge] Incompatible ParCool version, disabling ParCool compat: {}", e.toString());
+            }
         }
     }
 
