@@ -64,6 +64,7 @@ public final class GougePhysics {
     private static final Set<UUID> activeUse = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Integer> mantled = new ConcurrentHashMap<>();
     private static final Map<UUID, InteractionHand> activeHand = new ConcurrentHashMap<>();
+    private static final Map<UUID, ItemStack> activeStack = new ConcurrentHashMap<>();
 
     private static volatile List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> tagStatsCache;
 
@@ -197,7 +198,8 @@ public final class GougePhysics {
         }
         for (int i = 0; i < 4; i++) {
             BlockPos up = cell.above();
-            if (world.getBlockState(up).getCollisionShape(world, up).isEmpty()) {
+            if (world.getBlockState(up).getCollisionShape(world, up).isEmpty()
+                    || !isHardBlock(world.getBlockState(up))) {
                 break;
             }
             cell = up;
@@ -221,9 +223,24 @@ public final class GougePhysics {
         return false;
     }
 
+    public static double softSlideVy(double vy, double slideSpeed) {
+        double ramp = GougeConfig.INSTANCE.mechanics.soft_slide_ramp;
+        return ramp <= 0 ? -slideSpeed : Math.max(vy - ramp, -slideSpeed);
+    }
+
+    public static boolean softAhead(Level world, BlockPos pin, double feetY, double step) {
+        if (!GougeConfig.INSTANCE.climbing.stop_at_soft_block) {
+            return false;
+        }
+        BlockPos hands = new BlockPos(pin.getX(), Mth.floor(feetY + step + 1.0), pin.getZ());
+        BlockState at = world.getBlockState(hands);
+        return !at.getCollisionShape(world, hands).isEmpty() && !isHardBlock(at);
+    }
+
     public static BlockPos climbFocus(Level world, BlockPos pin, double feetY) {
         BlockPos chest = new BlockPos(pin.getX(), Mth.floor(feetY + 1.0), pin.getZ());
-        return world.getBlockState(chest).isAir() ? pin : chest;
+        BlockState at = world.getBlockState(chest);
+        return !at.isAir() && isHardBlock(at) ? chest : pin;
     }
 
     public static BlockHitResult pinnedHit(Level world, BlockPos pin, Direction face) {
@@ -262,6 +279,7 @@ public final class GougePhysics {
     public static void cleanup(UUID id) {
         slideVy.remove(id);
         activeHand.remove(id);
+        activeStack.remove(id);
         mantled.remove(id);
         hangData.remove(id);
         trails.remove(id);
@@ -272,9 +290,10 @@ public final class GougePhysics {
         activeUse.remove(id);
     }
 
-    public static void markActive(UUID id, InteractionHand hand) {
+    public static void markActive(UUID id, InteractionHand hand, ItemStack stack) {
         activeUse.add(id);
         activeHand.put(id, hand);
+        activeStack.put(id, stack);
     }
 
     public static InteractionHand handOverHand(ServerPlayer player) {
@@ -284,6 +303,46 @@ public final class GougePhysics {
         }
         InteractionHand other = was == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
         return isPickaxe(player.getItemInHand(other)) ? other : null;
+    }
+
+    public static void releaseCooldown(ServerPlayer player) {
+        int ticks = (int) (GougeConfig.INSTANCE.mechanics.release_cooldown * 20);
+        if (ticks <= 0 || player.onGround() || hasMantled(player)) {
+            return;
+        }
+        for (ItemStack s : new ItemStack[]{activeStack.getOrDefault(player.getUUID(), ItemStack.EMPTY), player.getMainHandItem(), player.getOffhandItem()}) {
+            if (isPickaxe(s) && !player.getCooldowns().isOnCooldown(s)) {
+                player.getCooldowns().addCooldown(s, ticks);
+            }
+        }
+    }
+
+    public static boolean blocksOtherHand(Level world, Player player, InteractionHand hand) {
+        if (!GougeConfig.INSTANCE.mechanics.block_other_hand) {
+            return false;
+        }
+        ItemStack pick = player.getItemInHand(hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
+        if (!isPickaxe(pick) || isPickaxe(player.getItemInHand(hand))) {
+            return false;
+        }
+        if (!(player instanceof ServerPlayer) && GougeClientPhysics.isGripping()) {
+            return true;
+        }
+        if (player instanceof ServerPlayer sp) {
+            if (isActive(sp.getUUID())) {
+                return true;
+            }
+            if (hasMantled(sp) || GougePlatform.get().blocksGouge(sp.getUUID())) {
+                return false;
+            }
+        }
+        if (player.onGround() || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
+                || player.getCooldowns().isOnCooldown(pick)
+                || !hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
+            return false;
+        }
+        BlockHitResult hit = raycast(world, player);
+        return hit != null && world.getBlockState(hit.getBlockPos()).getDestroySpeed(world, hit.getBlockPos()) >= 0;
     }
 
     public static void setAnchor(UUID id, Vec3 pos) {
@@ -329,9 +388,11 @@ public final class GougePhysics {
             if (next != null) {
                 player.startUsingItem(next);
                 activeHand.put(id, next);
+                activeStack.put(id, player.getItemInHand(next));
                 return;
             }
             stopSliding(player);
+            releaseCooldown(player);
         }
     }
 
@@ -746,10 +807,10 @@ public final class GougePhysics {
         d[5] = -1;
         d[6] = 0;
         d[7] = 0;
-        slideVy.remove(uid);
         Vec3 v = player.getDeltaMovement();
 
         if (realVy > 0.01) {
+            slideVy.remove(uid);
             d[4] = 0;
             player.setNoGravity(false);
             gougeNoGravity.remove(player.getUUID());
@@ -768,7 +829,9 @@ public final class GougePhysics {
 
         double slideSpeed = Mth.clamp(
                 SOFT_SLIDE_MAX_SPEED - hardness * SOFT_SLIDE_HARDNESS_SCALE, SOFT_SLIDE_MIN_SPEED, SOFT_SLIDE_MAX_SPEED);
-        player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, -slideSpeed, v.z * HORIZONTAL_DAMPING));
+        double softVy = softSlideVy(slide != null ? slide : Math.min(realVy, 0), slideSpeed);
+        slideVy.put(uid, softVy);
+        player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, softVy, v.z * HORIZONTAL_DAMPING));
         player.hurtMarked = true;
 
         updateClimbFx(player, world, hit, pos, state, hardness, now);
@@ -821,6 +884,9 @@ public final class GougePhysics {
             return ClimbResult.BLOCKED;
         }
 
+        if (softAhead(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed)) {
+            return ClimbResult.BLOCKED;
+        }
         double speed = GougeConfig.INSTANCE.climbing.speed;
         double dy = speed;
         double dx = 0.0;
@@ -956,8 +1022,13 @@ public final class GougePhysics {
         int reduction = (int) (GougeConfig.INSTANCE.enchantments.momentum_reduction * 20);
         int cooldown = Math.max(0, baseCooldown - momentum * reduction);
         d[1] = cooldown > 0 ? serverTick(player) + cooldown : -1;
-        if (cooldown > 0 && !stack.isEmpty()) {
-            player.getCooldowns().addCooldown(stack, cooldown);
+        if (cooldown > 0) {
+            for (InteractionHand h : InteractionHand.values()) {
+                ItemStack s = player.getItemInHand(h);
+                if (isPickaxe(s)) {
+                    player.getCooldowns().addCooldown(s, cooldown);
+                }
+            }
         }
     }
 

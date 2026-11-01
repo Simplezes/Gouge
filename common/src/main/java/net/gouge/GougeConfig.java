@@ -73,6 +73,9 @@ public class GougeConfig {
         d.mechanics.dual_grip_enabled = bool(c, "mechanics.dual_grip_enabled", d.mechanics.dual_grip_enabled);
         d.mechanics.dual_grip_multiplier = num(c, "mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
         d.mechanics.unlimited_grip = bool(c, "mechanics.unlimited_grip", d.mechanics.unlimited_grip);
+        d.mechanics.release_cooldown = num(c, "mechanics.release_cooldown", d.mechanics.release_cooldown);
+        d.mechanics.block_other_hand = bool(c, "mechanics.block_other_hand", d.mechanics.block_other_hand);
+        d.mechanics.soft_slide_ramp = num(c, "mechanics.soft_slide_ramp", d.mechanics.soft_slide_ramp);
 
         d.wall_jump.time_window = num(c, "wall_jump.time_window", d.wall_jump.time_window);
         d.wall_jump.forward_boost = num(c, "wall_jump.forward_boost", d.wall_jump.forward_boost);
@@ -85,6 +88,7 @@ public class GougeConfig {
         d.climbing.allow_diagonal = bool(c, "climbing.allow_diagonal", d.climbing.allow_diagonal);
         d.climbing.durability_cost = inum(c, "climbing.durability_cost", d.climbing.durability_cost);
         d.climbing.damage_both_tools = bool(c, "climbing.damage_both_tools", d.climbing.damage_both_tools);
+        d.climbing.stop_at_soft_block = bool(c, "climbing.stop_at_soft_block", d.climbing.stop_at_soft_block);
 
         d.enchantments.grip_bonus = num(c, "enchantments.grip_bonus", d.enchantments.grip_bonus);
         d.enchantments.momentum_reduction = num(c, "enchantments.momentum_reduction", d.enchantments.momentum_reduction);
@@ -180,6 +184,21 @@ public class GougeConfig {
         c.setComment("mechanics.unlimited_grip", """
                  Sandbox setting: allows infinite hang duration on walls without slipping.
                  Disabled by default (false). Durability drain still applies unless damage_rate is 0.""");
+        c.set("mechanics.release_cooldown", d.mechanics.release_cooldown);
+        c.setComment("mechanics.release_cooldown", """
+                 After letting go of a wall on purpose (releasing the use key or switching away
+                 from the pickaxe), how long before you can grab again (in seconds). This makes
+                 releasing cost some height. Never shortens a longer slip/wall-jump cooldown.
+                 Set to 0 to disable. Range: 0 - 600""");
+        c.set("mechanics.block_other_hand", d.mechanics.block_other_hand);
+        c.setComment("mechanics.block_other_hand", """
+                 While a pickaxe in one hand can grip a wall (or is gripping), items in the other
+                 hand (bow, food, shield, etc.) cannot be used. Set to false to allow using both.""");
+        c.set("mechanics.soft_slide_ramp", d.mechanics.soft_slide_ramp);
+        c.setComment("mechanics.soft_slide_ramp", """
+                 How quickly a soft-block slide speeds up, in blocks per tick of extra speed each
+                 tick. Lower = gentler start. Set to 0 to jump straight to full slide speed.
+                 Range: 0.0 - 1.0""");
 
         c.setComment("climbing", """
                  =======================================================
@@ -214,6 +233,10 @@ public class GougeConfig {
         c.setComment("climbing.damage_both_tools", """
                  If true and two pickaxes are held, climbing durability damage is dealt
                  to both pickaxes. If false, only the active tool takes damage.""");
+        c.set("climbing.stop_at_soft_block", d.climbing.stop_at_soft_block);
+        c.setComment("climbing.stop_at_soft_block", """
+                 If true, climbing stops when your hands reach a soft block (dirt, leaves, etc.)
+                 so you cannot climb up through soft blocks. If false, soft blocks above do not stop you.""");
 
         c.set("wall_jump.time_window", d.wall_jump.time_window);
         c.setComment("wall_jump.time_window", """
@@ -317,6 +340,8 @@ public class GougeConfig {
         c.mechanics.min_fall_distance = clamp("mechanics.min_fall_distance", c.mechanics.min_fall_distance, 0.0, 32.0);
         c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
         c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
+        c.mechanics.release_cooldown = clamp("mechanics.release_cooldown", c.mechanics.release_cooldown, 0.0, 600.0);
+        c.mechanics.soft_slide_ramp = clamp("mechanics.soft_slide_ramp", c.mechanics.soft_slide_ramp, 0.0, 1.0);
 
         c.wall_jump.time_window = clamp("wall_jump.time_window", c.wall_jump.time_window, 0.05, 5.0);
         c.wall_jump.forward_boost = clamp("wall_jump.forward_boost", c.wall_jump.forward_boost, 0.0, 5.0);
@@ -406,6 +431,9 @@ public class GougeConfig {
         public boolean dual_grip_enabled = true;
         public double dual_grip_multiplier = 1.5;
         public boolean unlimited_grip = false;
+        public double release_cooldown = 0.5;
+        public boolean block_other_hand = true;
+        public double soft_slide_ramp = 0.05;
     }
 
     public static class Climbing {
@@ -417,6 +445,7 @@ public class GougeConfig {
         public boolean allow_diagonal = false;
         public int durability_cost = 1;
         public boolean damage_both_tools = true;
+        public boolean stop_at_soft_block = true;
     }
 
     public static class WallJump {
