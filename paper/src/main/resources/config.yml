@@ -39,6 +39,15 @@ dual_grip_multiplier: 1.5
 # Sandbox: infinite hang time. Durability drain still applies unless damage_rate is 0.
 unlimited_grip: false
 
+# After letting go on purpose, seconds before you can grab again (0 = off). Never shortens a longer slip/wall-jump cooldown.
+release_cooldown: 0.5
+
+# Block using items in the other hand while a pickaxe can grip (or is gripping).
+block_other_hand: true
+
+# How fast a soft-block slide speeds up, extra blocks per tick each tick. 0 = jump straight to full speed. Range: 0.0 - 1.0
+soft_slide_ramp: 0.05
+
 # Server ticks without a right-click packet before the grip counts as released.
 # The client re-sends the use packet about every 4 ticks while right-click is held.
 # Raise this if the grip drops randomly on laggy connections.

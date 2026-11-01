@@ -22,6 +22,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -48,12 +50,13 @@ public final class GougePlugin extends JavaPlugin implements Listener {
     record Hit(Block block, BlockFace face, Vector at) {}
 
     static final class Session {
-        int lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100;
+        int lockRefresh, lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100;
         boolean dual, wasSneaking, noGrav;
+        Material toolType, lockedType;
         Block pin;
         BlockFace pinFace;
         Vector anchor;
-        Double slideVy;
+        Double slideVy, softVy;
         final ArrayDeque<Block> trail = new ArrayDeque<>();
     }
 
@@ -159,9 +162,59 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         Session s = sessions.get(p.getUniqueId());
         if (s != null) {
             s.lastUse = now;
-            return;
+        } else {
+            tryStart(p);
         }
-        tryStart(p);
+        if (getConfig().getBoolean("block_other_hand") && sessions.containsKey(p.getUniqueId())
+                && e.getItem() != null && !isPickaxe(e.getItem()) && !holdsUse(e.getItem())) {
+            e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+        }
+    }
+
+    @EventHandler
+    public void onLaunch(ProjectileLaunchEvent e) {
+        if (e.getEntity().getShooter() instanceof Player p && blockedWhileGripping(p)) e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onConsume(PlayerItemConsumeEvent e) {
+        if (blockedWhileGripping(e.getPlayer())) e.setCancelled(true);
+    }
+
+    private void lockOtherHand(Player p) {
+        Session s = sessions.get(p.getUniqueId());
+        if (s == null || !getConfig().getBoolean("block_other_hand")) return;
+        var inv = p.getInventory();
+        ItemStack main = inv.getItemInMainHand(), off = inv.getItemInOffHand();
+        ItemStack tool = isPickaxe(main) ? main : isPickaxe(off) ? off : null;
+        ItemStack other = tool == main ? off : main;
+        if (tool == null || isPickaxe(other) || other.getType().isAir()) return;
+        Material m = other.getType();
+        if (s.lockedType != m) {
+            if (s.lockedType != null) p.setCooldown(s.lockedType, 0);
+            s.lockedType = m;
+            s.lockRefresh = 0;
+        }
+        if (now >= s.lockRefresh) {
+            p.setCooldown(m, 200);
+            s.lockRefresh = now + 160;
+        }
+        if (p.isHandRaised()) {
+            try {
+                p.getClass().getMethod("clearActiveItem").invoke(p);
+            } catch (ReflectiveOperationException ignored) {
+            }
+        }
+    }
+
+    private boolean blockedWhileGripping(Player p) {
+        return getConfig().getBoolean("block_other_hand") && sessions.containsKey(p.getUniqueId());
+    }
+
+    private static boolean holdsUse(ItemStack it) {
+        Material m = it.getType();
+        return m.isEdible() || m == Material.BOW || m == Material.CROSSBOW || m == Material.TRIDENT
+                || m == Material.SHIELD || m == Material.POTION || m == Material.MILK_BUCKET;
     }
 
     @EventHandler
@@ -204,6 +257,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                 if (climbInput(p)) mantled.put(id, now);
                 else mantled.remove(id);
             }
+            lockOtherHand(p);
             double y = p.getLocation().getY();
             tickVy.put(id, y - prevY.getOrDefault(id, y));
             prevY.put(id, y);
@@ -217,6 +271,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
     private void end(Player p) {
         Session s = sessions.remove(p.getUniqueId());
         if (s == null) return;
+        if (s.lockedType != null) p.setCooldown(s.lockedType, 0);
         if (s.noGrav) p.setGravity(true);
         int slot = 0;
         for (Block b : s.trail) crack(p, b, slot++, 0f);
@@ -252,6 +307,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         if (damage > 0 && !damage(p, slotOf(p), damage)) return;
 
         Session s = new Session();
+        s.toolType = tool.getType();
         s.lastUse = now;
         s.anchor = p.getLocation().toVector();
         sessions.put(p.getUniqueId(), s);
@@ -269,10 +325,17 @@ public final class GougePlugin extends JavaPlugin implements Listener {
 
     private boolean tick(Player p, Session s) {
         var cfg = getConfig();
-        if (p.isOnGround() || p.getGameMode() == org.bukkit.GameMode.SPECTATOR || p.isFlying()
-                || now - s.lastUse > cfg.getInt("use_heartbeat_ticks")) return false;
+        if (p.isOnGround() || p.getGameMode() == org.bukkit.GameMode.SPECTATOR || p.isFlying()) return false;
+        if (p.isHandRaised() && cfg.getBoolean("block_other_hand")) s.lastUse = now;
+        if (now - s.lastUse > cfg.getInt("use_heartbeat_ticks")) {
+            releaseCooldown(p, s);
+            return false;
+        }
         ItemStack tool = heldPickaxe(p);
-        if (tool == null) return false;
+        if (tool == null) {
+            releaseCooldown(p, s);
+            return false;
+        }
         EquipmentSlot slot = slotOf(p);
 
         double drift = cfg.getDouble("max_drift");
@@ -316,6 +379,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
 
         if (isHard(block)) {
             s.softAt = -100;
+            s.softVy = null;
             gravity(p, s, false);
             if (Math.abs(effVy) < lock) {
                 s.slideVy = null;
@@ -345,6 +409,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                         return true;
                     }
                 }
+                dbg(p, "hang realVy=" + realVy);
                 p.setVelocity(new Vector());
                 if (now % 20 == 0 && !drain(p, slot, tool)) return false;
                 if (now % 20 == 10) {
@@ -358,6 +423,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
             double f = clamp(HARD_BASE - hardness * HARD_SCALE, HARD_MIN, HARD_MAX);
             double slideY = (s.slideVy != null ? s.slideVy : Math.min(realVy, 0)) * f;
             s.slideVy = slideY;
+            dbg(p, "hard slide realVy=" + realVy + " slideY=" + slideY + " vel=" + v.getY());
             p.setVelocity(new Vector(v.getX() * H_DAMP, slideY, v.getZ() * H_DAMP));
             p.setFallDistance(0f);
             fx(p, s, hit, block, hardness);
@@ -368,6 +434,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         s.grabTick = -1;
         s.slideVy = null;
         if (realVy > 0.01) {
+            s.softVy = null;
             gravity(p, s, true);
             fx(p, s, hit, block, hardness);
             return true;
@@ -376,7 +443,11 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         s.softAt = now;
         if (now % 20 == 0 && !drain(p, slot, tool)) return false;
         double slide = clamp(SOFT_MAX - hardness * SOFT_SCALE, SOFT_MIN, SOFT_MAX);
-        p.setVelocity(new Vector(v.getX() * H_DAMP, -slide, v.getZ() * H_DAMP));
+        double ramp = cfg.getDouble("soft_slide_ramp");
+        double slideVy = ramp <= 0 ? -slide : Math.max((s.softVy != null ? s.softVy : Math.min(realVy, 0)) - ramp, -slide);
+        s.softVy = slideVy;
+        dbg(p, "soft slide realVy=" + realVy + " cap=" + -slide + " vy=" + slideVy + " vel=" + v.getY());
+        p.setVelocity(new Vector(v.getX() * H_DAMP, slideVy, v.getZ() * H_DAMP));
         fx(p, s, hit, block, hardness);
         return true;
     }
@@ -451,7 +522,21 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         int base = (int) (cfg.getDouble("slip_cooldown") * 20);
         int red = (int) (cfg.getDouble("enchantments.momentum_reduction") * 20);
         int cd = Math.max(0, base - enchLevel(tool, "momentum") * red);
-        if (cd > 0) p.setCooldown(tool.getType(), cd);
+        if (cd > 0) setPickaxeCooldowns(p, cd, true);
+    }
+
+    private void releaseCooldown(Player p, Session s) {
+        int ticks = (int) (getConfig().getDouble("release_cooldown") * 20);
+        if (ticks <= 0 || hasMantled(p)) return;
+        setPickaxeCooldowns(p, ticks, false);
+        if (s.toolType != null && !p.hasCooldown(s.toolType)) p.setCooldown(s.toolType, ticks);
+    }
+
+    private void setPickaxeCooldowns(Player p, int ticks, boolean force) {
+        var inv = p.getInventory();
+        for (ItemStack it : new ItemStack[]{inv.getItemInMainHand(), inv.getItemInOffHand()}) {
+            if (isPickaxe(it) && (force || !p.hasCooldown(it.getType()))) p.setCooldown(it.getType(), ticks);
+        }
     }
 
     private void trail(Player p, Session s, Block block) {
