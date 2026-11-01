@@ -35,6 +35,10 @@ public abstract class GougeItemMixin {
     private void gouge$use(Level world, Player user, InteractionHand hand,
                            CallbackInfoReturnable<InteractionResultHolder<ItemStack>> cir) {
         ItemStack self = (ItemStack) (Object) this;
+        if (GougePhysics.blocksOtherHand(world, user, hand)) {
+            cir.setReturnValue(InteractionResultHolder.fail(self));
+            return;
+        }
         if (world.isClientSide || !(world instanceof ServerLevel serverLevel)) return;
         if (!(user instanceof ServerPlayer player)) return;
         if (!GougePhysics.isPickaxe(self)) return;
@@ -61,7 +65,7 @@ public abstract class GougeItemMixin {
         }
 
         GougePhysics.spawnImpact(serverLevel, hit, state, hardness);
-        GougePhysics.markActive(player.getUUID(), hand);
+        GougePhysics.markActive(player.getUUID(), hand, self);
         GougePhysics.setAnchor(player.getUUID(), player.position());
         player.startUsingItem(hand);
         cir.setReturnValue(InteractionResultHolder.consume(self));
@@ -89,6 +93,7 @@ public abstract class GougeItemMixin {
         if (GougePhysics.handOverHand(player) == null) {
             GougePhysics.noteReleaseAtLedge(player);
             GougePhysics.stopSliding(player);
+            GougePhysics.releaseCooldown(player);
         }
         ci.cancel();
     }
