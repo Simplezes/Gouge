@@ -8,6 +8,7 @@ import com.alrex.parcool.common.action.impl.HorizontalWallRun;
 import com.alrex.parcool.common.action.impl.VerticalWallRun;
 import com.alrex.parcool.common.action.impl.WallJump;
 import com.alrex.parcool.common.action.impl.WallSlide;
+import com.mojang.logging.LogUtils;
 import net.gouge.GougePhysics;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -22,7 +23,15 @@ public final class ParCoolCompat {
     private ParCoolCompat() {}
 
     public static void register() {
-        NeoForge.EVENT_BUS.register(new Listener());
+        try {
+            NeoForge.EVENT_BUS.register(new Listener());
+        } catch (LinkageError e) {
+            try {
+                ParCool4Compat.register(wallActionActive);
+            } catch (ReflectiveOperationException | LinkageError e2) {
+                LogUtils.getLogger().warn("[Gouge] Unsupported ParCool version, compat disabled: {}", e2.toString());
+            }
+        }
     }
 
     public static boolean isWallActionActive(UUID id) {
