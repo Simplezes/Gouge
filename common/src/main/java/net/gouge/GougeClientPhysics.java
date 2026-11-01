@@ -24,6 +24,10 @@ public final class GougeClientPhysics {
     private GougeClientPhysics() {
     }
 
+    public static boolean isGripping() {
+        return predicting;
+    }
+
     public static void clientTick(Player player) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer local = mc.player;
@@ -46,6 +50,10 @@ public final class GougeClientPhysics {
             return;
         }
 
+        if (local.isUsingItem() && !GougePhysics.isPickaxe(local.getUseItem())) {
+            stop(local);
+            return;
+        }
         ItemStack stack = local.getMainHandItem();
         if (!GougePhysics.isPickaxe(stack)) {
             stack = local.getOffhandItem();
@@ -60,6 +68,10 @@ public final class GougeClientPhysics {
         }
 
         Vec3 v = local.getDeltaMovement();
+        if (predicting && v.y > 0.01 && !mc.options.keyJump.isDown()) {
+            stop(local);
+            return;
+        }
         if (!predicting && v.y >= 0) {
             stop(local);
             return;
@@ -149,6 +161,10 @@ public final class GougeClientPhysics {
                         return;
                     }
 
+                    if (GougePhysics.softAhead(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed)) {
+                        local.setDeltaMovement(Vec3.ZERO);
+                        return;
+                    }
                     double speed = GougeConfig.INSTANCE.climbing.speed;
                     double dy = speed;
                     double dx = 0.0;
@@ -200,7 +216,7 @@ public final class GougeClientPhysics {
                 GougePhysics.SOFT_SLIDE_MAX_SPEED - hardness * GougePhysics.SOFT_SLIDE_HARDNESS_SCALE,
                 GougePhysics.SOFT_SLIDE_MIN_SPEED, GougePhysics.SOFT_SLIDE_MAX_SPEED);
         local.setDeltaMovement(new Vec3(
-                v.x * GougePhysics.HORIZONTAL_DAMPING, -slideSpeed, v.z * GougePhysics.HORIZONTAL_DAMPING));
+                v.x * GougePhysics.HORIZONTAL_DAMPING, GougePhysics.softSlideVy(v.y, slideSpeed), v.z * GougePhysics.HORIZONTAL_DAMPING));
     }
 
     private static void start(LocalPlayer local) {
