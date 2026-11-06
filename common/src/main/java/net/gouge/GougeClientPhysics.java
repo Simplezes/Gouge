@@ -68,7 +68,6 @@ public final class GougeClientPhysics {
         }
 
         Vec3 v = local.getDeltaMovement();
-        // hangLocked: climb velocity lingers a tick after Space is released, that is not a jump-off
         if (predicting && !hangLocked && v.y > 0.01 && !mc.options.keyJump.isDown()) {
             stop(local);
             return;
