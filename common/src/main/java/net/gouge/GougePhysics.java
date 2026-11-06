@@ -364,7 +364,6 @@ public final class GougePhysics {
         anchors.put(id, pos);
     }
 
-    // the onGround flag is client-reported and can lag while gouge drives the player's velocity, so also look at the block underfoot
     public static boolean grounded(Player player) {
         return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
     }
@@ -679,7 +678,6 @@ public final class GougePhysics {
         boolean climbAllowed = GougeConfig.INSTANCE.climbing.enabled
                 && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
         if (savedPin != null && savedPin.grabTick() == d[5] && climbAllowed && (hit == null || isJumpHeld(player))) {
-            // ponytail: keep the pin after Space is released if the look-ray lost the wall, else gouge drops and ParCool grabs
             BlockHitResult pinned = pinnedHit(world, climbFocus(world, savedPin.pos(), player.getY()), savedPin.face());
             if (pinned != null) {
                 hit = pinned;
