@@ -10,6 +10,7 @@ base.archivesName = archives_base_name
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 sourceSets.main.java.srcDir file("../common/src/main/java")
+sourceSets.main.java.srcDir file("../cloth/src/main/java")
 sourceSets.main.resources.srcDir file("../common/src/main/resources")
 
 repositories {
@@ -41,6 +42,15 @@ neoForge {
 
 dependencies {
     compileOnly "maven.modrinth:parcool:9sTw2Dnd"
+    compileOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
+    if (project.hasProperty("withCloth")) {
+        def patched = file("../dist/dev/cloth-config-neoforge-patched.jar")
+        if (patched.exists()) {
+            runtimeOnly files(patched)
+        } else {
+            runtimeOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
+        }
+    }
     compileOnly "com.electronwill.night-config:toml:3.8.1"
     compileOnly "com.electronwill.night-config:core:3.8.1"
 }
