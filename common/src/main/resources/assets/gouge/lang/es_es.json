@@ -2,5 +2,9 @@
   "enchantment.gouge.grip": "Agarre",
   "enchantment.gouge.grip.desc": "Te permite colgarte de las paredes por más tiempo antes de resbalar.",
   "enchantment.gouge.momentum": "Ímpetu",
-  "enchantment.gouge.momentum.desc": "Acorta el tiempo de recuperación de resbalones para que te recuperes más rápido."
+  "enchantment.gouge.momentum.desc": "Acorta el tiempo de recuperación de resbalones para que te recuperes más rápido.",
+  "enchantment.gouge.spring": "Resorte",
+  "enchantment.gouge.spring.desc": "Aumenta el impulso sobre capas blandas y los saltos de pared.",
+  "enchantment.gouge.shimmy": "Desplazamiento",
+  "enchantment.gouge.shimmy.desc": "Te permite desplazarte más rápido de lado por las paredes."
 }
