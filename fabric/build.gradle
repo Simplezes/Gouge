@@ -7,6 +7,10 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
+    maven {
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
     maven { url = "https://maven.fabricmc.net/" }
     mavenCentral()
 }
@@ -20,6 +24,9 @@ dependencies {
     include "com.electronwill.night-config:toml:3.8.1"
     include "com.electronwill.night-config:core:3.8.1"
 
+    compileOnly "maven.modrinth:cloth-config:26.1.154+fabric"
+    compileOnly "maven.modrinth:modmenu:18.0.2"
+
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
@@ -29,6 +36,7 @@ test {
 }
 
 sourceSets.main.java.srcDir file("../common/src/main/java")
+sourceSets.main.java.srcDir file("../cloth/src/main/java")
 sourceSets.main.resources.srcDir file("../common/src/main/resources")
 
 loom {
