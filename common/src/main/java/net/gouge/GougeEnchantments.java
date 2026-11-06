@@ -10,6 +10,10 @@ public final class GougeEnchantments {
             Identifier.fromNamespaceAndPath("gouge", "grip"));
     public static final ResourceKey<Enchantment> MOMENTUM = ResourceKey.create(Registries.ENCHANTMENT,
             Identifier.fromNamespaceAndPath("gouge", "momentum"));
+    public static final ResourceKey<Enchantment> SPRING = ResourceKey.create(Registries.ENCHANTMENT,
+            Identifier.fromNamespaceAndPath("gouge", "spring"));
+    public static final ResourceKey<Enchantment> SHIMMY = ResourceKey.create(Registries.ENCHANTMENT,
+            Identifier.fromNamespaceAndPath("gouge", "shimmy"));
 
     private GougeEnchantments() {}
 }
