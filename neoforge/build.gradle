@@ -15,12 +15,17 @@ sourceSets {
         resources.srcDirs = [file("../common/src/main/resources")]
     }
     main {
+        java.srcDir file("../cloth/src/main/java")
         compileClasspath += common.output
         runtimeClasspath += common.output
     }
 }
 
 repositories {
+    maven {
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
     mavenCentral()
 }
 
@@ -42,6 +47,7 @@ dependencies {
     compileOnly "com.electronwill.night-config:core:3.6.4"
     commonCompileOnly "com.electronwill.night-config:toml:3.6.4"
     commonCompileOnly "com.electronwill.night-config:core:3.6.4"
+    compileOnly "maven.modrinth:cloth-config:13.0.138+neoforge"
 }
 
 jar {
