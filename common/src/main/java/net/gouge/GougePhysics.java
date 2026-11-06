@@ -65,6 +65,11 @@ public final class GougePhysics {
     private static final Map<UUID, Integer> mantled = new ConcurrentHashMap<>();
     private static final Map<UUID, InteractionHand> activeHand = new ConcurrentHashMap<>();
     private static final Map<UUID, ItemStack> activeStack = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> launchCharge = new ConcurrentHashMap<>();
+    private static final Map<UUID, int[]> launchAssist = new ConcurrentHashMap<>();
+
+    public static final int LAUNCH_ASSIST_TICKS = 14;
+    private static final double LAUNCH_ASSIST_SPEED = 0.15;
 
     private static volatile List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> tagStatsCache;
 
@@ -257,6 +262,82 @@ public final class GougePhysics {
         RELEASED
     }
 
+    public static int springLevel(ItemStack stack) {
+        return enchLevel(stack, GougeEnchantments.SPRING);
+    }
+
+    private static double springScale(ItemStack stack) {
+        return 1.0 + springLevel(stack) * GougeConfig.INSTANCE.enchantments.spring_bonus;
+    }
+
+    public static BlockPos handsCell(BlockPos pin, double feetY, double step) {
+        return new BlockPos(pin.getX(), Mth.floor(feetY + step + 1.0), pin.getZ());
+    }
+
+    public static BlockPos launchCap(Level world, BlockPos pin, double feetY, double step) {
+        BlockPos hands = handsCell(pin, feetY, step);
+        for (int i = 0; i < GougeConfig.INSTANCE.launch.max_cap_height; i++) {
+            BlockPos cell = hands.above(i);
+            BlockState st = world.getBlockState(cell);
+            if (st.getCollisionShape(world, cell).isEmpty()) {
+                return null;
+            }
+            if (canStandOnLedge(world, cell, st)) {
+                return cell;
+            }
+            if (isHardBlock(st)) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public static Vec3 launchVelocity(ItemStack stack) {
+        return new Vec3(0, GougeConfig.INSTANCE.launch.upward_boost * springScale(stack), 0);
+    }
+
+    public static Vec3 assistPush(Level world, Player player, Direction face) {
+        Vec3 toward = new Vec3(-face.getStepX(), 0, -face.getStepZ());
+        if (!world.noCollision(player, player.getBoundingBox().move(toward.scale(0.3)))) {
+            return null;
+        }
+        return toward.scale(LAUNCH_ASSIST_SPEED);
+    }
+
+    public static Vec3 traverseDelta(Player player, Direction face, float leftIntent, ItemStack stack) {
+        double speed = GougeConfig.INSTANCE.traverse.speed
+                * (1.0 + enchLevel(stack, GougeEnchantments.SHIMMY) * GougeConfig.INSTANCE.enchantments.traverse_bonus);
+        return new Vec3(face.getStepZ() * leftIntent * speed, 0, -face.getStepX() * leftIntent * speed);
+    }
+
+    public static BlockPos traverseCell(Level world, BlockPos pin, Direction face, Vec3 dest, double feetY) {
+        BlockPos column = tangentCell(pin, face, dest);
+        BlockPos body = new BlockPos(column.getX(), Mth.floor(feetY + 1.0), column.getZ());
+        BlockState st = world.getBlockState(body);
+        return !st.getCollisionShape(world, body).isEmpty() && isHardBlock(st) && st.getDestroySpeed(world, body) >= 0
+                ? body : null;
+    }
+
+    private static double blockGripMultiplier(BlockState state) {
+        var map = GougeConfig.INSTANCE.block_grip;
+        if (map.isEmpty()) {
+            return 1.0;
+        }
+        Double direct = map.get(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
+        if (direct != null) {
+            return direct;
+        }
+        for (var e : map.entrySet()) {
+            if (e.getKey().startsWith("#")) {
+                Identifier tag = Identifier.tryParse(e.getKey().substring(1));
+                if (tag != null && state.is(TagKey.create(Registries.BLOCK, tag))) {
+                    return e.getValue();
+                }
+            }
+        }
+        return 1.0;
+    }
+
     public static boolean isHardBlock(BlockState state) {
         Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         String override = GougeConfig.INSTANCE.block_overrides.get(id.toString());
@@ -288,6 +369,8 @@ public final class GougePhysics {
         lastY.remove(id);
         gougeNoGravity.remove(id);
         activeUse.remove(id);
+        launchCharge.remove(id);
+        launchAssist.remove(id);
     }
 
     public static void markActive(UUID id, InteractionHand hand, ItemStack stack) {
@@ -307,7 +390,7 @@ public final class GougePhysics {
 
     public static void releaseCooldown(ServerPlayer player) {
         int ticks = (int) (GougeConfig.INSTANCE.mechanics.release_cooldown * 20);
-        if (ticks <= 0 || player.onGround() || hasMantled(player)) {
+        if (ticks <= 0 || grounded(player) || hasMantled(player)) {
             return;
         }
         for (ItemStack s : new ItemStack[]{activeStack.getOrDefault(player.getUUID(), ItemStack.EMPTY), player.getMainHandItem(), player.getOffhandItem()}) {
@@ -336,7 +419,7 @@ public final class GougePhysics {
                 return false;
             }
         }
-        if (player.onGround() || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
+        if (grounded(player) || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
                 || player.getCooldowns().isOnCooldown(pick)
                 || !hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
             return false;
@@ -349,12 +432,29 @@ public final class GougePhysics {
         anchors.put(id, pos);
     }
 
+    public static boolean grounded(Player player) {
+        return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
+    }
+
     public static boolean isActive(UUID id) {
         return activeUse.contains(id);
     }
 
     public static void checkStale(ServerPlayer player) {
         UUID id = player.getUUID();
+        int[] assist = launchAssist.get(id);
+        if (assist != null) {
+            if (grounded(player) || --assist[0] <= 0) {
+                launchAssist.remove(id);
+            } else {
+                Vec3 push = assistPush(player.level(), player, Direction.from3DDataValue(assist[1]));
+                if (push != null) {
+                    Vec3 v = player.getDeltaMovement();
+                    player.setDeltaMovement(push.x, v.y, push.z);
+                    player.hurtMarked = true;
+                }
+            }
+        }
         if (player.onGround() && mantled.containsKey(id)) {
             if (isJumpHeld(player)) {
                 mantled.put(id, serverTick(player));
@@ -442,6 +542,7 @@ public final class GougePhysics {
         clearCrack(player);
         anchors.remove(player.getUUID());
         lastY.remove(player.getUUID());
+        launchCharge.remove(player.getUUID());
     }
 
     private static double actualVerticalSpeed(ServerPlayer player) {
@@ -639,7 +740,7 @@ public final class GougePhysics {
     }
 
     private static boolean tick0(ServerPlayer player, int[] d) {
-        if (player.onGround() || player.isSpectator() || player.getAbilities().flying) {
+        if (grounded(player) || player.isSpectator() || player.getAbilities().flying) {
             release(player);
             return false;
         }
@@ -668,7 +769,8 @@ public final class GougePhysics {
         ClimbPin savedPin = climbPins.get(player.getUUID());
         boolean climbAllowed = GougeConfig.INSTANCE.climbing.enabled
                 && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
-        if (savedPin != null && savedPin.grabTick() == d[5] && climbAllowed && isJumpHeld(player)) {
+        boolean shimmy = traverseAllowed(player) && strafeIntent(player) != 0 && !(climbAllowed && isJumpHeld(player));
+        if (savedPin != null && savedPin.grabTick() == d[5] && ((climbAllowed && (hit == null || isJumpHeld(player))) || shimmy)) {
             BlockHitResult pinned = pinnedHit(world, climbFocus(world, savedPin.pos(), player.getY()), savedPin.face());
             if (pinned != null) {
                 hit = pinned;
@@ -740,7 +842,7 @@ public final class GougePhysics {
                 if (d[0] == -1) {
                     d[5] = now;
                     climbPins.put(player.getUUID(), new ClimbPin(now, pos, dir));
-                    d[7] = singlePickaxeHangTicks(useItem);
+                    d[7] = Math.max(1, (int) Math.round(singlePickaxeHangTicks(useItem) * blockGripMultiplier(state)));
                     boolean isDual = isDualGripActive(player);
                     d[6] = isDual ? 1 : 0;
                     int hangTicks = d[7];
@@ -774,7 +876,11 @@ public final class GougePhysics {
                     }
                 }
 
-                player.setDeltaMovement(Vec3.ZERO);
+                if (!isHoldingSpace || !canClimb) {
+                    launchCharge.remove(uid);
+                }
+                Vec3 shimmyMove = shimmy ? traverseStep(player, world, d, hit, state, hardness, now) : Vec3.ZERO;
+                player.setDeltaMovement(shimmyMove);
                 player.hurtMarked = true;
 
                 if (now % 20 == 0 && !drain(player)) {
@@ -885,8 +991,9 @@ public final class GougePhysics {
         }
 
         if (softAhead(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed)) {
-            return ClimbResult.BLOCKED;
+            return tryLaunch(player, world, dir, pin, now);
         }
+        launchCharge.remove(id);
         double speed = GougeConfig.INSTANCE.climbing.speed;
         double dy = speed;
         double dx = 0.0;
@@ -952,6 +1059,63 @@ public final class GougePhysics {
         return ClimbResult.SUCCESS;
     }
 
+    private static boolean traverseAllowed(ServerPlayer player) {
+        GougeConfig.Traverse t = GougeConfig.INSTANCE.traverse;
+        return t.enabled && (!t.requires_dual || isDualGripActive(player));
+    }
+
+    private static Vec3 traverseStep(ServerPlayer player, ServerLevel world, int[] d, BlockHitResult hit,
+            BlockState state, float hardness, int now) {
+        UUID id = player.getUUID();
+        ClimbPin saved = climbPins.get(id);
+        if (saved == null || saved.grabTick() != d[5]) {
+            return Vec3.ZERO;
+        }
+        Vec3 delta = traverseDelta(player, saved.face(), strafeIntent(player), player.getUseItem());
+        BlockPos next = traverseCell(world, saved.pos(), saved.face(), player.position().add(delta.scale(4)), player.getY());
+        if (next == null || !world.noCollision(player, player.getBoundingBox().move(delta))) {
+            return Vec3.ZERO;
+        }
+        climbPins.put(id, new ClimbPin(saved.grabTick(), next, saved.face()));
+        Vec3 anchor = anchors.get(id);
+        if (anchor != null) {
+            anchors.put(id, anchor.add(delta.x, 0, delta.z));
+        }
+        if (now % 6 == 0) {
+            spawnJuice(world, hit, state, hardness);
+        }
+        return delta;
+    }
+
+    private static ClimbResult tryLaunch(ServerPlayer player, ServerLevel world, Direction dir, BlockPos pin, int now) {
+        GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
+        UUID id = player.getUUID();
+        if (!l.enabled || launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed) == null) {
+            launchCharge.remove(id);
+            return ClimbResult.BLOCKED;
+        }
+        int charged = launchCharge.merge(id, 1, Integer::sum);
+        if (charged < (int) (l.charge_time * 20)) {
+            return ClimbResult.BLOCKED;
+        }
+        launchCharge.remove(id);
+        ItemStack stack = player.getUseItem();
+        player.setDeltaMovement(launchVelocity(stack));
+        player.fallDistance = 0.0F;
+        player.hurtMarked = true;
+        mantled.put(id, now);
+        launchAssist.put(id, new int[]{LAUNCH_ASSIST_TICKS, dir.get3DDataValue()});
+        player.setNoGravity(false);
+        gougeNoGravity.remove(id);
+        release(player);
+        player.stopUsingItem();
+        clearActive(id);
+        Vec3 at = player.position().add(0, 1.0, 0).subtract(dir.getStepX() * 0.4, 0, dir.getStepZ() * 0.4);
+        world.playSound(null, pin, SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.9f, 1.4f);
+        world.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 14, 0.2, 0.2, 0.2, 0.2);
+        return ClimbResult.RELEASED;
+    }
+
     private static boolean drain(ServerPlayer player) {
         ItemStack stack = player.getUseItem();
         GougeConfig.PickaxeStats stats = getStats(stack);
@@ -1003,8 +1167,9 @@ public final class GougePhysics {
 
         var dir = hit.getDirection();
         Vec3 normal = new Vec3(dir.getStepX(), dir.getStepY(), dir.getStepZ());
-        double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost;
-        double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost;
+        double spring = springScale(player.getUseItem());
+        double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost * spring;
+        double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost * spring;
         player.setDeltaMovement(normal.scale(kickH).add(0, kickV, 0));
         player.hurtMarked = true;
 
