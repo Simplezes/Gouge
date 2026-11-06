@@ -47,7 +47,7 @@ public abstract class GougeItemMixin {
         if (!GougePhysics.isPickaxe(self)) return;
         if (GougePhysics.isActive(player.getUUID())) return;
         if (GougePhysics.hasMantled(player)) return;
-        if (player.onGround() || player.getDeltaMovement().y >= 0) return;
+        if (GougePhysics.grounded(player) || player.getDeltaMovement().y >= 0) return;
         if (!GougePhysics.hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) return;
         if (player.isSpectator() || player.getAbilities().flying) return;
         if (net.gouge.GougePlatform.get().blocksGouge(player.getUUID())) return;
