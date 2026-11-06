@@ -622,7 +622,7 @@ public class GougeConfig {
     public static class Traverse {
 
         public boolean enabled = true;
-        public boolean requires_dual = false;
+        public boolean requires_dual = true;
         public double speed = 0.06;
         public int durability_cost = 0;
     }
