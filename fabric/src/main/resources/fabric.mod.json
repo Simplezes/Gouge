@@ -8,13 +8,18 @@
   "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
-    "main": ["net.gouge.Gouge"]
+    "main": ["net.gouge.Gouge"],
+    "modmenu": ["net.gouge.GougeModMenu"]
   },
   "mixins": ["gouge.mixins.json"],
   "depends": {
     "fabricloader": ">=0.16.0",
     "fabric-api": "*",
     "minecraft": "1.21.1"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
   }
 }
 

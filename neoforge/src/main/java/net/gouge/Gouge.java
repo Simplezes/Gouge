@@ -5,7 +5,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -15,12 +17,15 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 public class Gouge {
     public static final String MOD_ID = "gouge";
 
-    public Gouge(IEventBus modEventBus) {
+    public Gouge(IEventBus modEventBus, ModContainer container) {
         GougePlatform.set(new NeoForgePlatform());
         GougeConfig.load();
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("cloth_config")) {
+            net.gouge.extern.cloth.ClothConfigBridge.register(container);
+        }
         if (ModList.get().isLoaded("parcool")) {
             net.gouge.extern.parcool.ParCoolCompat.register();
         }
