@@ -189,8 +189,8 @@ public final class GougeClientPhysics {
                     if (GougeConfig.INSTANCE.climbing.allow_diagonal) {
                         float leftIntent = mc.options.keyLeft.isDown() == mc.options.keyRight.isDown() ? 0.0F
                                 : (mc.options.keyLeft.isDown() ? 1.0F : -1.0F);
-                        dx = face.getStepZ() * leftIntent * (speed * 0.707);
-                        dz = -face.getStepX() * leftIntent * (speed * 0.707);
+                        dx = -face.getStepZ() * leftIntent * (speed * 0.707);
+                        dz = face.getStepX() * leftIntent * (speed * 0.707);
                     }
 
                     if (local.level().noCollision(local, local.getBoundingBox().move(dx, dy, dz))) {
@@ -252,14 +252,16 @@ public final class GougeClientPhysics {
 
     private static void tryLaunch(LocalPlayer local, Direction face, ItemStack stack) {
         GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
-        if (!l.enabled || GougePhysics.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) == null) {
+        BlockPos cap = l.enabled
+                ? GougePhysics.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+        if (cap == null) {
             launchCharge = 0;
             return;
         }
         if (++launchCharge < (int) (l.charge_time * 20)) {
             return;
         }
-        local.setDeltaMovement(GougePhysics.launchVelocity(stack));
+        local.setDeltaMovement(GougePhysics.launchVelocity(stack, GougePhysics.launchRise(local.level(), cap, local.getY())));
         local.fallDistance = 0.0F;
         stop(local);
         mantledUntil = local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS;
