@@ -15,12 +15,17 @@ sourceSets {
         resources.srcDirs = [file("../common/src/main/resources")]
     }
     main {
+        java.srcDir file("../cloth/src/main/java")
         compileClasspath += common.output
         runtimeClasspath += common.output
     }
 }
 
 repositories {
+    maven {
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
     mavenCentral()
 }
 
@@ -47,6 +52,7 @@ legacyForge {
 }
 
 dependencies {
+    compileOnly "maven.modrinth:cloth-config:11.1.136+forge"
     compileOnly "com.electronwill.night-config:toml:3.6.4"
     compileOnly "com.electronwill.night-config:core:3.6.4"
     commonAnnotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
