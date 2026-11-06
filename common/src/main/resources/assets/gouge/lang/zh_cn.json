@@ -2,5 +2,9 @@
   "enchantment.gouge.grip": "抓地",
   "enchantment.gouge.grip.desc": "让你在滑落前能在墙上挂得更久。",
   "enchantment.gouge.momentum": "动量",
-  "enchantment.gouge.momentum.desc": "缩短滑落后的冷却时间，让你恢复得更快。"
+  "enchantment.gouge.momentum.desc": "缩短滑落后的冷却时间，让你恢复得更快。",
+  "enchantment.gouge.spring": "弹跳",
+  "enchantment.gouge.spring.desc": "增强越过软方块顶层的弹射和蹬墙跳的力度。",
+  "enchantment.gouge.shimmy": "横移",
+  "enchantment.gouge.shimmy.desc": "让你沿墙壁更快地横向移动。"
 }
