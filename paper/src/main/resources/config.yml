@@ -69,6 +69,40 @@ climbing:
   # Two pickaxes held: damage both while climbing (true) or only the active one (false).
   damage_both_tools: true
 
+traverse:
+  # Look sideways along the wall while hanging to shimmy that way.
+  enabled: true
+  # true = needs a pickaxe in both hands.
+  requires_dual: false
+  # Sideways speed in blocks per tick. Range: 0.01 - 0.3
+  speed: 0.06
+  # Extra durability drained per second while shimmying. 0 = none.
+  durability_cost: 0
+  # Degrees you must turn away from the wall to start shimmying. Range: 20 - 85
+  look_yaw: 55.0
+
+launch:
+  # Keep climbing against a short soft cap (dirt, grass...) on top of the rock to spring over it.
+  enabled: true
+  # Seconds of climbing into the cap before launching. Range: 0.0 - 5.0
+  charge_time: 0.3
+  # Minimum upward launch power. With auto_height the launch gets stronger for taller caps. Range: 0.1 - 2.0
+  upward_boost: 0.75
+  # Strengthen the launch just enough to reach the top of the cap (1-4 blocks all work).
+  auto_height: true
+  # Push towards the wall while rising so you land on top. 0 = off. Range: 0.0 - 0.5
+  assist_speed: 0.15
+  # Tallest soft cap you can launch over (blocks). Range: 1 - 4
+  max_cap_height: 3
+
+effects:
+  # Chip and dust particles for gripping, shimmying, climbing and launching.
+  particles: true
+  # Grip, scrape and launch sounds.
+  sounds: true
+  # Volume multiplier for Gouge sounds. Range: 0.0 - 2.0
+  volume: 1.0
+
 wall_jump:
   # Double-tap crouch within this many seconds to kick off the wall. Range: 0.05 - 5.0
   time_window: 0.7
@@ -77,8 +111,12 @@ wall_jump:
   # Launch strength upward. Range: 0.0 - 5.0
   upward_boost: 1.1
 
-# Needs the mod's gouge:grip / gouge:momentum enchantment datapack on the server.
+# Needs the mod's gouge:grip / momentum / spring / shimmy enchantment datapack on the server.
 enchantments:
+  # Extra launch and wall-kick power per Spring level (0.15 = +15%).
+  spring_bonus: 0.15
+  # Extra shimmy speed per Shimmy level (0.5 = +50%).
+  traverse_bonus: 0.5
   # Extra seconds of hang time per Grip level.
   grip_bonus: 2.0
   # Seconds removed from the slip cooldown per Momentum level.
@@ -106,3 +144,9 @@ pickaxes:
 #   "minecraft:oak_log": hard
 # Values must be "hard" or "soft". These win over cling_everything.
 block_overrides: {}
+
+# Multiplies hang time on specific blocks or block tags. 1.0 = normal, 0.5 = slips twice as fast.
+# Example:
+#   "minecraft:ice": 0.25
+#   "#minecraft:logs": 1.5
+block_grip: {}

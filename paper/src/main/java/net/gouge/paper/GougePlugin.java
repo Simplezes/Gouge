@@ -46,11 +46,12 @@ public final class GougePlugin extends JavaPlugin implements Listener {
     static final double SOFT_MAX = 0.5, SOFT_MIN = 0.3, SOFT_SCALE = 0.13, H_DAMP = 0.5;
     static final double HARD_BASE = 0.90, HARD_SCALE = 0.03, HARD_MIN = 0.55, HARD_MAX = 0.90, HANG_LOCK = 0.08;
     static final int MANTLE_REGRAB = 20;
+    static final int ASSIST_TICKS = 26;
 
     record Hit(Block block, BlockFace face, Vector at) {}
 
     static final class Session {
-        int lockRefresh, lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100;
+        int lockRefresh, lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100, launchCharge;
         boolean dual, wasSneaking, noGrav;
         Material toolType, lockedType;
         Block pin;
@@ -78,6 +79,8 @@ public final class GougePlugin extends JavaPlugin implements Listener {
     private final Map<UUID, Double> prevY = new HashMap<>();
     private final Map<UUID, Double> tickVy = new HashMap<>();
     private final Map<UUID, Integer> mantled = new HashMap<>();
+    private final Map<UUID, Integer> assistLeft = new HashMap<>();
+    private final Map<UUID, BlockFace> assistFace = new HashMap<>();
     private final Map<Material, double[]> pickaxes = new EnumMap<>(Material.class);
     private final Map<String, Boolean> overrides = new HashMap<>();
     private double[] fallback;
@@ -233,6 +236,8 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         prevY.remove(e.getPlayer().getUniqueId());
         tickVy.remove(e.getPlayer().getUniqueId());
         mantled.remove(e.getPlayer().getUniqueId());
+        assistLeft.remove(e.getPlayer().getUniqueId());
+        assistFace.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler
@@ -258,6 +263,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                 else mantled.remove(id);
             }
             lockOtherHand(p);
+            assist(p);
             double y = p.getLocation().getY();
             tickVy.put(id, y - prevY.getOrDefault(id, y));
             prevY.put(id, y);
@@ -347,9 +353,10 @@ public final class GougePlugin extends JavaPlugin implements Listener {
 
         boolean space = climbInput(p);
         boolean canClimb = cfg.getBoolean("climbing.enabled") && (!cfg.getBoolean("climbing.requires_dual") || dualActive(p));
+        int shim = space && canClimb ? 0 : shimmyDir(p, s);
 
         Hit hit = raycast(p);
-        if (s.pin != null && s.hangEnd != -1 && space && canClimb) {
+        if (s.pin != null && s.hangEnd != -1 && ((space && canClimb) || shim != 0)) {
             Block focus = p.getWorld().getBlockAt(s.pin.getX(), (int) Math.floor(p.getLocation().getY() + 1), s.pin.getZ());
             Block b = focus.getType().isAir() ? s.pin : focus;
             if (!b.getType().isAir()) hit = new Hit(b, s.pinFace, center(b).add(faceVec(s.pinFace).multiply(0.5)));
@@ -389,7 +396,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                     s.grabTick = now;
                     s.pin = block;
                     s.pinFace = hit.face;
-                    s.baseHang = hangTicks(tool);
+                    s.baseHang = Math.max(1, (int) Math.round(hangTicks(tool) * gripMult(block)));
                     s.dual = dual;
                     int ticks = dual ? (int) Math.round(s.baseHang * cfg.getDouble("dual_grip_multiplier")) : s.baseHang;
                     s.hangEnd = now + Math.max(1, ticks);
@@ -401,8 +408,9 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                     slip(p, tool, loc);
                     return false;
                 }
+                if (!(space && canClimb)) s.launchCharge = 0;
                 if (space && canClimb) {
-                    int r = climb(p, s, hit, slot);
+                    int r = climb(p, s, hit, slot, tool);
                     if (r == 2) return false;
                     if (r == 1) {
                         fx(p, s, hit, block, hardness);
@@ -410,7 +418,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
                     }
                 }
                 dbg(p, "hang realVy=" + realVy);
-                p.setVelocity(new Vector());
+                p.setVelocity(shim != 0 ? shimmyStep(p, s, tool, shim, hit, block, hardness) : new Vector());
                 if (now % 20 == 0 && !drain(p, slot, tool)) return false;
                 if (now % 20 == 10) {
                     p.getWorld().playSound(loc, Sound.BLOCK_CHAIN_STEP, SoundCategory.PLAYERS, 0.4f,
@@ -452,14 +460,16 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         return true;
     }
 
-    private int climb(Player p, Session s, Hit hit, EquipmentSlot slot) {
+    private int climb(Player p, Session s, Hit hit, EquipmentSlot slot, ItemStack tool) {
         var cfg = getConfig();
         World w = p.getWorld();
         Location loc = p.getLocation();
         BlockFace face = s.pinFace;
         if (wallDistance(s.pin, face, loc) > cfg.getDouble("climbing.reach")) return 0;
         Block ledge = climbLedge(w, s.pin.getX(), s.pin.getZ(), loc.getY());
+        if (ledge != null && !isHard(ledge) && tryLaunch(p, s, tool)) return 2;
         if (ledge == null || !isHard(ledge) || ledge.getType().getHardness() < 0) return 0;
+        s.launchCharge = 0;
 
         if (canStand(ledge) && loc.getY() >= ledgeTop(ledge) - 0.45) {
             double dx = ledge.getX() + 0.5 - loc.getX(), dz = ledge.getZ() + 0.5 - loc.getZ();
@@ -498,16 +508,172 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         return 1;
     }
 
+    private double spring(ItemStack tool) {
+        return 1.0 + enchLevel(tool, "spring") * getConfig().getDouble("enchantments.spring_bonus");
+    }
+
+    private double gripMult(Block b) {
+        var sec = getConfig().getConfigurationSection("block_grip");
+        if (sec == null) return 1.0;
+        String id = b.getType().getKey().toString();
+        if (sec.isSet(id)) return sec.getDouble(id);
+        for (String key : sec.getKeys(false)) {
+            if (!key.startsWith("#")) continue;
+            NamespacedKey k = NamespacedKey.fromString(key.substring(1));
+            Tag<Material> t = k == null ? null : Bukkit.getTag(Tag.REGISTRY_BLOCKS, k, Material.class);
+            if (t != null && t.isTagged(b.getType())) return sec.getDouble(key);
+        }
+        return 1.0;
+    }
+
+    private int shimmyDir(Player p, Session s) {
+        var cfg = getConfig();
+        if (s.pin == null || s.pinFace == null || s.hangEnd == -1 || !cfg.getBoolean("traverse.enabled")
+                || (cfg.getBoolean("traverse.requires_dual") && !dualActive(p))) return 0;
+        double yaw = Math.toRadians(p.getLocation().getYaw());
+        double lx = -Math.sin(yaw), lz = Math.cos(yaw);
+        double wx = -s.pinFace.getModX(), wz = -s.pinFace.getModZ();
+        double angle = Math.toDegrees(Math.atan2(wx * lz - wz * lx, wx * lx + wz * lz));
+        double min = cfg.getDouble("traverse.look_yaw");
+        return angle < -min ? 1 : angle > min ? -1 : 0;
+    }
+
+    private Vector shimmyStep(Player p, Session s, ItemStack tool, int dir, Hit hit, Block hitBlock, float hardness) {
+        var cfg = getConfig();
+        BlockFace f = s.pinFace;
+        double sp = cfg.getDouble("traverse.speed")
+                * (1.0 + enchLevel(tool, "shimmy") * cfg.getDouble("enchantments.traverse_bonus"));
+        Vector d = new Vector(-f.getModZ() * dir * sp, 0, f.getModX() * dir * sp);
+        Location loc = p.getLocation();
+        World w = p.getWorld();
+        int x = f.getModX() != 0 ? s.pin.getX() : (int) Math.floor(loc.getX() + d.getX() * 4);
+        int z = f.getModX() != 0 ? (int) Math.floor(loc.getZ() + d.getZ() * 4) : s.pin.getZ();
+        Block body = w.getBlockAt(x, (int) Math.floor(loc.getY() + 1.0), z);
+        if (!solid(body) || !isHard(body) || body.getType().getHardness() < 0 || collides(w, p.getBoundingBox().shift(d))) {
+            return new Vector();
+        }
+        if (!body.equals(s.pin)) {
+            int slot = 0;
+            for (Block b : s.trail) crack(p, b, slot++, 0f);
+            s.trail.clear();
+        }
+        s.pin = body;
+        s.anchor.add(d);
+        trail(p, s, body);
+        if (now % 3 == 0) chips(wallContact(p, f), body, 5, 0.25, 0.04);
+        if (now % 5 == 0) snd(loc, body.getBlockData().getSoundGroup().getHitSound(), 0.7f, 0.75f + (float) Math.random() * 0.3f);
+        int cost = cfg.getInt("traverse.durability_cost");
+        if (cost > 0 && now % 20 == 0) damage(p, slotOf(p), cost);
+        return d;
+    }
+
+    private static double riseOf(double boost) {
+        double y = 0, vy = boost;
+        for (int i = 0; i < 400 && vy > 0; i++) {
+            y += vy;
+            vy = (vy - 0.08) * 0.98;
+        }
+        return y;
+    }
+
+    private static double boostFor(double rise) {
+        double boost = 0.1;
+        while (boost < 2.0 && riseOf(boost) < rise) boost += 0.01;
+        return boost;
+    }
+
+    private void snd(Location at, Sound sound, float vol, float pitch) {
+        float v = vol * (float) getConfig().getDouble("effects.volume");
+        if (getConfig().getBoolean("effects.sounds") && v > 0) at.getWorld().playSound(at, sound, SoundCategory.PLAYERS, v, pitch);
+    }
+
+    private void chips(Location at, Block block, int count, double spread, double speed) {
+        if (getConfig().getBoolean("effects.particles")) {
+            at.getWorld().spawnParticle(BLOCK_PARTICLE, at, count, spread, spread * 1.4, spread, speed, block.getBlockData());
+        }
+    }
+
+    private Location wallContact(Player p, BlockFace face) {
+        return p.getLocation().add(0, 1.0, 0).subtract(face.getModX() * 0.45, 0, face.getModZ() * 0.45);
+    }
+
+    private boolean tryLaunch(Player p, Session s, ItemStack tool) {
+        var cfg = getConfig();
+        World w = p.getWorld();
+        Location loc = p.getLocation();
+        Block hands = w.getBlockAt(s.pin.getX(), (int) Math.floor(loc.getY() + cfg.getDouble("climbing.speed") + 1.0), s.pin.getZ());
+        Block cap = cfg.getBoolean("launch.enabled") && solid(hands) && !isHard(hands) ? capTop(hands) : null;
+        if (cap == null) {
+            s.launchCharge = 0;
+            return false;
+        }
+        if (++s.launchCharge < (int) (cfg.getDouble("launch.charge_time") * 20)) {
+            if (s.launchCharge % 2 == 1) chips(wallContact(p, s.pinFace), hands, 4, 0.2, 0.02);
+            if (s.launchCharge % 4 == 1) snd(loc, hands.getBlockData().getSoundGroup().getHitSound(), 0.8f, 0.55f);
+            return false;
+        }
+        s.launchCharge = 0;
+        p.setFallDistance(0f);
+        double base = cfg.getDouble("launch.upward_boost");
+        if (cfg.getBoolean("launch.auto_height")) {
+            base = Math.max(base, boostFor(ledgeTop(cap) - loc.getY() + 0.4));
+        }
+        p.setVelocity(new Vector(0, base * spring(tool), 0));
+        mantled.put(p.getUniqueId(), now);
+        assistLeft.put(p.getUniqueId(), ASSIST_TICKS);
+        assistFace.put(p.getUniqueId(), s.pinFace);
+        Location at = loc.clone().add(0, 1, 0).subtract(s.pinFace.getModX() * 0.4, 0, s.pinFace.getModZ() * 0.4);
+        snd(loc, hands.getBlockData().getSoundGroup().getBreakSound(), 1.3f, 0.8f);
+        snd(loc, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 0.9f, 1.4f);
+        chips(at, hands, 30, 0.3, 0.12);
+        if (cfg.getBoolean("effects.particles")) w.spawnParticle(Particle.CLOUD, loc.clone().add(0, 0.2, 0), 14, 0.25, 0.1, 0.25, 0.06);
+        return true;
+    }
+
+    private Block capTop(Block hands) {
+        int max = getConfig().getInt("launch.max_cap_height");
+        for (int i = 0; i < max; i++) {
+            Block c = hands.getRelative(BlockFace.UP, i);
+            if (!solid(c)) return null;
+            if (canStand(c)) return c;
+            if (isHard(c)) return null;
+        }
+        return null;
+    }
+
+    private void assist(Player p) {
+        UUID id = p.getUniqueId();
+        Integer left = assistLeft.get(id);
+        if (left == null) return;
+        if (p.isOnGround() || left <= 1) {
+            assistLeft.remove(id);
+            assistFace.remove(id);
+            return;
+        }
+        assistLeft.put(id, left - 1);
+        BlockFace f = assistFace.get(id);
+        if (getConfig().getBoolean("effects.particles")) {
+            p.getWorld().spawnParticle(Particle.CLOUD, p.getLocation().add(0, 0.1, 0), 2, 0.15, 0.05, 0.15, 0.01);
+        }
+        double speed = getConfig().getDouble("launch.assist_speed");
+        Vector toward = new Vector(-f.getModX(), 0, -f.getModZ());
+        if (speed <= 0 || collides(p.getWorld(), p.getBoundingBox().shift(toward.clone().multiply(0.3)))) return;
+        Vector v = p.getVelocity();
+        p.setVelocity(new Vector(toward.getX() * speed, v.getY(), toward.getZ() * speed));
+    }
+
     private boolean kick(Player p, ItemStack tool, Hit hit) {
         var cfg = getConfig();
         cooldown(p, tool);
         p.setFallDistance(0f);
-        Vector n = faceVec(hit.face).multiply(cfg.getDouble("wall_jump.forward_boost"))
-                .setY(cfg.getDouble("wall_jump.upward_boost"));
+        double sp = spring(tool);
+        Vector n = faceVec(hit.face).multiply(cfg.getDouble("wall_jump.forward_boost") * sp)
+                .setY(cfg.getDouble("wall_jump.upward_boost") * sp);
         p.setVelocity(n);
         Location at = hit.at.toLocation(p.getWorld());
         p.getWorld().playSound(at, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, SoundCategory.PLAYERS, 1f, 1.2f);
         p.getWorld().spawnParticle(Particle.CRIT, at, 15, 0.2, 0.2, 0.2, 0.25);
+        chips(wallContact(p, hit.face), hit.block, 20, 0.25, 0.12);
         return true;
     }
 
