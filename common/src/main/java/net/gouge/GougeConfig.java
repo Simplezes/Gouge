@@ -35,11 +35,46 @@ public class GougeConfig {
 
         INSTANCE = validate(read(config));
 
-        if (isNew) {
+        if (isNew || hasMissingKeys(config, INSTANCE)) {
             write(config, INSTANCE);
             config.save();
         }
         config.close();
+        GougePhysics.invalidateCache();
+    }
+
+    private static boolean hasMissingKeys(CommentedConfig existing, ConfigData data) {
+        CommentedConfig fresh = CommentedConfig.inMemory();
+        write(fresh, data);
+        return missing(fresh, existing, List.of());
+    }
+
+    private static boolean missing(CommentedConfig fresh, CommentedConfig existing, List<String> parent) {
+        for (var entry : fresh.entrySet()) {
+            List<String> path = new java.util.ArrayList<>(parent);
+            path.add(entry.getKey());
+            if (!existing.contains(path)) {
+                return true;
+            }
+            if (entry.getValue() instanceof CommentedConfig child && missing(child, existing, path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void save() {
+        Path file = GougePlatform.get().configDir().resolve("gouge.toml");
+        CommentedFileConfig config = CommentedFileConfig.builder(file, TomlFormat.instance())
+                .preserveInsertionOrder()
+                .sync()
+                .build();
+        try {
+            write(config, validate(INSTANCE));
+            config.save();
+        } finally {
+            config.close();
+        }
         GougePhysics.invalidateCache();
     }
 
@@ -90,6 +125,24 @@ public class GougeConfig {
         d.climbing.damage_both_tools = bool(c, "climbing.damage_both_tools", d.climbing.damage_both_tools);
         d.climbing.stop_at_soft_block = bool(c, "climbing.stop_at_soft_block", d.climbing.stop_at_soft_block);
 
+        d.traverse.enabled = bool(c, "traverse.enabled", d.traverse.enabled);
+        d.traverse.requires_dual = bool(c, "traverse.requires_dual", d.traverse.requires_dual);
+        d.traverse.speed = num(c, "traverse.speed", d.traverse.speed);
+        d.traverse.durability_cost = inum(c, "traverse.durability_cost", d.traverse.durability_cost);
+
+        d.launch.enabled = bool(c, "launch.enabled", d.launch.enabled);
+        d.launch.charge_time = num(c, "launch.charge_time", d.launch.charge_time);
+        d.launch.upward_boost = num(c, "launch.upward_boost", d.launch.upward_boost);
+        d.launch.max_cap_height = inum(c, "launch.max_cap_height", d.launch.max_cap_height);
+        d.launch.auto_height = bool(c, "launch.auto_height", d.launch.auto_height);
+        d.launch.assist_speed = num(c, "launch.assist_speed", d.launch.assist_speed);
+
+        d.effects.particles = bool(c, "effects.particles", d.effects.particles);
+        d.effects.sounds = bool(c, "effects.sounds", d.effects.sounds);
+        d.effects.volume = num(c, "effects.volume", d.effects.volume);
+
+        d.enchantments.spring_bonus = num(c, "enchantments.spring_bonus", d.enchantments.spring_bonus);
+        d.enchantments.traverse_bonus = num(c, "enchantments.traverse_bonus", d.enchantments.traverse_bonus);
         d.enchantments.grip_bonus = num(c, "enchantments.grip_bonus", d.enchantments.grip_bonus);
         d.enchantments.momentum_reduction = num(c, "enchantments.momentum_reduction", d.enchantments.momentum_reduction);
 
@@ -118,10 +171,21 @@ public class GougeConfig {
             }
             d.block_overrides = parsed;
         }
+
+        Object gripRaw = c.get(List.of("block_grip"));
+        if (gripRaw instanceof CommentedConfig grip) {
+            Map<String, Double> parsed = new LinkedHashMap<>();
+            for (var entry : grip.entrySet()) {
+                if (entry.getValue() instanceof Number n) {
+                    parsed.put(entry.getKey(), n.doubleValue());
+                }
+            }
+            d.block_grip = parsed;
+        }
         return d;
     }
 
-    private static void write(CommentedFileConfig c, ConfigData d) {
+    private static void write(CommentedConfig c, ConfigData d) {
         c.setComment("mechanics", """
                  =======================================================
                  GOUGE CONFIGURATION
@@ -238,6 +302,64 @@ public class GougeConfig {
                  If true, climbing stops when your hands reach a soft block (dirt, leaves, etc.)
                  so you cannot climb up through soft blocks. If false, soft blocks above do not stop you.""");
 
+        c.setComment("effects", """
+                 =======================================================
+                 EFFECTS
+                 Particles and sounds for shimmying, climbing, launching and gripping.
+                 =======================================================""");
+        c.set("effects.particles", d.effects.particles);
+        c.setComment("effects.particles", " Show chip and dust particles. Gameplay is not affected.");
+        c.set("effects.sounds", d.effects.sounds);
+        c.setComment("effects.sounds", " Play grip, scrape and launch sounds. Gameplay is not affected.");
+        c.set("effects.volume", d.effects.volume);
+        c.setComment("effects.volume", " Volume multiplier for Gouge sounds. Range: 0.0 - 2.0");
+
+        c.setComment("traverse", """
+                 =======================================================
+                 TRAVERSE SETTINGS
+                 Shimmy sideways along a wall while hanging (hold A / D).
+                 Uses the normal grip timer and durability drain.
+                 =======================================================""");
+        c.set("traverse.enabled", d.traverse.enabled);
+        c.setComment("traverse.enabled", " Lets you move left and right along a wall while hanging on it.");
+        c.set("traverse.requires_dual", d.traverse.requires_dual);
+        c.setComment("traverse.requires_dual", " If true, traversing requires a pickaxe in both hands.");
+        c.set("traverse.speed", d.traverse.speed);
+        c.setComment("traverse.speed", " Sideways speed in blocks per tick. Range: 0.01 - 0.3");
+        c.set("traverse.durability_cost", d.traverse.durability_cost);
+        c.setComment("traverse.durability_cost", """
+                 Extra durability drained per second while shimmying sideways, on top of the
+                 normal hang drain. Default is 0. Range: 0 - 100""");
+
+        c.setComment("launch", """
+                 =======================================================
+                 LAUNCH SETTINGS
+                 When a climb is stopped by a short cap of soft blocks (dirt, grass...) on top
+                 of the rock, keep holding Space and you spring up and over it.
+                 =======================================================""");
+        c.set("launch.enabled", d.launch.enabled);
+        c.setComment("launch.enabled", " Enables the climb-over-soft-cap launch.");
+        c.set("launch.charge_time", d.launch.charge_time);
+        c.setComment("launch.charge_time", """
+                 How long (seconds) you must keep holding Space against the soft cap before you
+                 launch. Prevents accidental launches. Range: 0.0 - 5.0""");
+        c.set("launch.upward_boost", d.launch.upward_boost);
+        c.setComment("launch.upward_boost", """
+                 Upward launch power used when auto_height is off. 0.75 clears about 2 blocks.
+                 With auto_height on this value is ignored. Range: 0.1 - 2.0""");
+        c.set("launch.auto_height", d.launch.auto_height);
+        c.setComment("launch.auto_height", """
+                 Sizes the launch to land you on top of the cap, so 1, 2, 3 or 4 block caps all
+                 work without overshooting. Turn off to always use exactly upward_boost.""");
+        c.set("launch.assist_speed", d.launch.assist_speed);
+        c.setComment("launch.assist_speed", """
+                 Gentle push towards the wall while you rise, so you land on top of the cap
+                 instead of falling back. Set to 0 to disable. Range: 0.0 - 0.5""");
+        c.set("launch.max_cap_height", d.launch.max_cap_height);
+        c.setComment("launch.max_cap_height", """
+                 Tallest soft cap (in blocks) you can launch over. The cap must have standable
+                 ground on top, otherwise there is nothing to land on. Range: 1 - 4""");
+
         c.set("wall_jump.time_window", d.wall_jump.time_window);
         c.setComment("wall_jump.time_window", """
                  How quickly you need to double-tap crouch to trigger the wall jump (in seconds).
@@ -253,6 +375,14 @@ public class GougeConfig {
                  How hard you get launched upward when wall jumping.
                  1.1 is default. This is what gives you height on the jump. Range: 0.0 - 5.0""");
 
+        c.set("enchantments.spring_bonus", d.enchantments.spring_bonus);
+        c.setComment("enchantments.spring_bonus", """
+                 Extra launch and wall-kick power per level of the Spring enchantment.
+                 0.15 means +15% per level. Range: 0 - 2""");
+        c.set("enchantments.traverse_bonus", d.enchantments.traverse_bonus);
+        c.setComment("enchantments.traverse_bonus", """
+                 Extra shimmy speed per level of the Shimmy enchantment.
+                 0.5 means +50% per level. Range: 0 - 5""");
         c.set("enchantments.grip_bonus", d.enchantments.grip_bonus);
         c.setComment("enchantments.grip_bonus", """
                  How many extra seconds of hang time you get per level of the Grip enchantment.
@@ -310,6 +440,21 @@ public class GougeConfig {
         for (var entry : d.block_overrides.entrySet()) {
             c.set(List.of("block_overrides", entry.getKey()), entry.getValue());
         }
+
+        c.set("block_grip", CommentedConfig.inMemory());
+        c.setComment("block_grip", """
+                 =======================================================
+                 BLOCK GRIP
+                 Multiplies hang time on specific blocks (or block tags). Optional.
+                 1.0 = normal, 0.5 = slips twice as fast, 2.0 = holds twice as long.
+                 Example:
+                   "minecraft:ice" = 0.25
+                   "#minecraft:logs" = 1.5
+                 Range per entry: 0.0 - 10.0
+                 =======================================================""");
+        for (var entry : d.block_grip.entrySet()) {
+            c.set(List.of("block_grip", entry.getKey()), entry.getValue());
+        }
     }
 
     private static ConfigData validate(ConfigData c) {
@@ -324,6 +469,18 @@ public class GougeConfig {
         }
         if (c.climbing == null) {
             c.climbing = new Climbing();
+        }
+        if (c.traverse == null) {
+            c.traverse = new Traverse();
+        }
+        if (c.launch == null) {
+            c.launch = new Launch();
+        }
+        if (c.effects == null) {
+            c.effects = new Effects();
+        }
+        if (c.block_grip == null) {
+            c.block_grip = new LinkedHashMap<>();
         }
         if (c.pickaxes == null) {
             c.pickaxes = new ConfigData().pickaxes;
@@ -351,6 +508,16 @@ public class GougeConfig {
         c.climbing.reach = clamp("climbing.reach", c.climbing.reach, 0.5, 32.0);
         c.climbing.durability_cost = (int) clamp("climbing.durability_cost", c.climbing.durability_cost, 0, 100);
 
+        c.traverse.speed = clamp("traverse.speed", c.traverse.speed, 0.01, 0.3);
+        c.traverse.durability_cost = (int) clamp("traverse.durability_cost", c.traverse.durability_cost, 0, 100);
+        c.launch.assist_speed = clamp("launch.assist_speed", c.launch.assist_speed, 0.0, 0.5);
+        c.effects.volume = clamp("effects.volume", c.effects.volume, 0.0, 2.0);
+        c.launch.charge_time = clamp("launch.charge_time", c.launch.charge_time, 0.0, 5.0);
+        c.launch.upward_boost = clamp("launch.upward_boost", c.launch.upward_boost, 0.1, 2.0);
+        c.launch.max_cap_height = (int) clamp("launch.max_cap_height", c.launch.max_cap_height, 1, 4);
+        c.enchantments.spring_bonus = clamp("enchantments.spring_bonus", c.enchantments.spring_bonus, 0.0, 2.0);
+        c.enchantments.traverse_bonus = clamp("enchantments.traverse_bonus", c.enchantments.traverse_bonus, 0.0, 5.0);
+        c.block_grip.replaceAll((k, v) -> clamp("block_grip." + k, v, 0.0, 10.0));
         c.enchantments.grip_bonus = clamp("enchantments.grip_bonus", c.enchantments.grip_bonus, 0.0, 60.0);
         c.enchantments.momentum_reduction = clamp("enchantments.momentum_reduction", c.enchantments.momentum_reduction, 0.0, 60.0);
 
@@ -403,6 +570,10 @@ public class GougeConfig {
         public WallJump wall_jump = new WallJump();
         public Enchantments enchantments = new Enchantments();
         public Climbing climbing = new Climbing();
+        public Traverse traverse = new Traverse();
+        public Launch launch = new Launch();
+        public Effects effects = new Effects();
+        public Map<String, Double> block_grip = new LinkedHashMap<>();
         public Map<String, PickaxeStats> pickaxes = new LinkedHashMap<>();
         public Map<String, String> block_overrides = new LinkedHashMap<>();
 
@@ -448,6 +619,31 @@ public class GougeConfig {
         public boolean stop_at_soft_block = true;
     }
 
+    public static class Traverse {
+
+        public boolean enabled = true;
+        public boolean requires_dual = false;
+        public double speed = 0.06;
+        public int durability_cost = 0;
+    }
+
+    public static class Effects {
+
+        public boolean particles = true;
+        public boolean sounds = true;
+        public double volume = 1.0;
+    }
+
+    public static class Launch {
+
+        public boolean enabled = true;
+        public double charge_time = 0.3;
+        public double upward_boost = 0.75;
+        public int max_cap_height = 3;
+        public boolean auto_height = true;
+        public double assist_speed = 0.15;
+    }
+
     public static class WallJump {
 
         public double time_window = 0.7;
@@ -457,6 +653,8 @@ public class GougeConfig {
 
     public static class Enchantments {
 
+        public double spring_bonus = 0.15;
+        public double traverse_bonus = 0.5;
         public double grip_bonus = 2.0;
         public double momentum_reduction = 1.0;
     }
