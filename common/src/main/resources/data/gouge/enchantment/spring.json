@@ -1,0 +1,12 @@
+{
+  "description": { "translate": "enchantment.gouge.spring" },
+  "supported_items": "#minecraft:pickaxes",
+  "primary_items": "#minecraft:pickaxes",
+  "weight": 4,
+  "max_level": 3,
+  "min_cost": { "base": 8, "per_level_above_first": 10 },
+  "max_cost": { "base": 28, "per_level_above_first": 10 },
+  "anvil_cost": 2,
+  "slots": ["mainhand"],
+  "effects": {}
+}
