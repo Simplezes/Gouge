@@ -2,5 +2,9 @@
   "enchantment.gouge.grip": "Grip",
   "enchantment.gouge.grip.desc": "Lets you hang onto walls longer before slipping.",
   "enchantment.gouge.momentum": "Momentum",
-  "enchantment.gouge.momentum.desc": "Shortens the wall-slip cooldown so you recover faster."
+  "enchantment.gouge.momentum.desc": "Shortens the wall-slip cooldown so you recover faster.",
+  "enchantment.gouge.spring": "Spring",
+  "enchantment.gouge.spring.desc": "Boosts the launch over soft caps and wall kicks.",
+  "enchantment.gouge.shimmy": "Shimmy",
+  "enchantment.gouge.shimmy.desc": "Lets you shimmy sideways along walls faster."
 }

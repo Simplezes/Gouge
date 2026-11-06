@@ -16,6 +16,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 @Mod(Gouge.MOD_ID)
 public class Gouge {
@@ -25,6 +28,8 @@ public class Gouge {
             DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, MOD_ID);
     private static final RegistryObject<Enchantment> GRIP = ENCHANTMENTS.register("grip", GougeEnchantment::new);
     private static final RegistryObject<Enchantment> MOMENTUM = ENCHANTMENTS.register("momentum", GougeEnchantment::new);
+    private static final RegistryObject<Enchantment> SPRING = ENCHANTMENTS.register("spring", GougeEnchantment::new);
+    private static final RegistryObject<Enchantment> SHIMMY = ENCHANTMENTS.register("shimmy", GougeEnchantment::new);
 
     public Gouge() {
         GougePlatform.set(new NeoForgePlatform());
@@ -33,11 +38,16 @@ public class Gouge {
         ENCHANTMENTS.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);
         MinecraftForge.EVENT_BUS.register(this);
+        if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("cloth_config")) {
+            net.gouge.extern.cloth.ClothConfigBridge.register();
+        }
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {
         GougeEnchantments.GRIP = GRIP.get();
         GougeEnchantments.MOMENTUM = MOMENTUM.get();
+        GougeEnchantments.SPRING = SPRING.get();
+        GougeEnchantments.SHIMMY = SHIMMY.get();
     }
 
     @SubscribeEvent

@@ -2,5 +2,9 @@
   "enchantment.gouge.grip": "Хватка",
   "enchantment.gouge.grip.desc": "Позволяет дольше держаться за стены перед тем, как соскользнуть.",
   "enchantment.gouge.momentum": "Импульс",
-  "enchantment.gouge.momentum.desc": "Сокращает время восстановления после соскальзывания со стены, чтобы вы быстрее пришли в себя."
+  "enchantment.gouge.momentum.desc": "Сокращает время восстановления после соскальзывания со стены, чтобы вы быстрее пришли в себя.",
+  "enchantment.gouge.spring": "Пружина",
+  "enchantment.gouge.spring.desc": "Усиливает рывок через мягкий слой и прыжки от стены.",
+  "enchantment.gouge.shimmy": "Подтягивание",
+  "enchantment.gouge.shimmy.desc": "Позволяет быстрее двигаться вбок по стене."
 }
