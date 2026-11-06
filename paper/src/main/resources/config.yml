@@ -73,7 +73,7 @@ traverse:
   # Look sideways along the wall while hanging to shimmy that way.
   enabled: true
   # true = needs a pickaxe in both hands.
-  requires_dual: false
+  requires_dual: true
   # Sideways speed in blocks per tick. Range: 0.01 - 0.3
   speed: 0.06
   # Extra durability drained per second while shimmying. 0 = none.

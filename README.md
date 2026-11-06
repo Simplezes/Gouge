@@ -46,7 +46,7 @@ Falling toward a wall? **Right-click** it with a pickaxe. It bites into the surf
 
 > **Quick Escape:** Double-tap **Crouch** within **0.7 seconds** to kick yourself off the wall at any time, whether you are hanging still, climbing, or mid-slide.
 
-> **Shimmy:** While hanging, hold **A** or **D** to move sideways along the wall. It stops at corners and at the edge of the rock.
+> **Shimmy:** While hanging with a pickaxe in each hand, hold **A** or **D** to move sideways along the wall. It stops at corners and at the edge of the rock.
 
 > **Launch:** Climbing up a rocky mountain and hit a block or two of dirt or grass on top? Keep holding **Space** and you spring up and over it.
 
