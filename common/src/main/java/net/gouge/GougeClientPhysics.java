@@ -19,6 +19,9 @@ public final class GougeClientPhysics {
     private static int mantledUntil;
     private static BlockPos pin;
     private static Direction pinDir;
+    private static int launchCharge;
+    private static int assistTicks;
+    private static Direction assistDir;
 
     private GougeClientPhysics() {
     }
@@ -32,6 +35,17 @@ public final class GougeClientPhysics {
         LocalPlayer local = mc.player;
         if (local == null || player != local) {
             return;
+        }
+        if (assistTicks > 0) {
+            if (GougePhysics.grounded(local) || --assistTicks <= 0) {
+                assistTicks = 0;
+            } else {
+                Vec3 push = GougePhysics.assistPush(local.level(), local, assistDir);
+                if (push != null) {
+                    Vec3 mv = local.getDeltaMovement();
+                    local.setDeltaMovement(push.x, mv.y, push.z);
+                }
+            }
         }
         if (local.onGround() && mantledUntil != 0) {
             mantledUntil = mc.options.keyJump.isDown() ? local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS : 0;
@@ -87,9 +101,13 @@ public final class GougeClientPhysics {
         }
 
         BlockHitResult hit = GougePhysics.raycast(local.level(), local);
-        if (predicting && pin != null && pinDir != null && mc.options.keyJump.isDown()
-                && GougeConfig.INSTANCE.climbing.enabled
-                && (!GougeConfig.INSTANCE.climbing.requires_dual || GougePhysics.isDualGripActive(local))) {
+        boolean climbOk = GougeConfig.INSTANCE.climbing.enabled
+                && (!GougeConfig.INSTANCE.climbing.requires_dual || GougePhysics.isDualGripActive(local));
+        boolean shimmy = GougeConfig.INSTANCE.traverse.enabled
+                && (!GougeConfig.INSTANCE.traverse.requires_dual || GougePhysics.isDualGripActive(local))
+                && mc.options.keyLeft.isDown() != mc.options.keyRight.isDown()
+                && !(climbOk && mc.options.keyJump.isDown());
+        if (predicting && pin != null && pinDir != null && ((mc.options.keyJump.isDown() && climbOk) || shimmy)) {
             BlockHitResult pinned = GougePhysics.pinnedHit(
                     local.level(), GougePhysics.climbFocus(local.level(), pin, local.getY()), pinDir);
             if (pinned != null) {
@@ -159,8 +177,10 @@ public final class GougeClientPhysics {
 
                     if (GougePhysics.softAhead(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed)) {
                         local.setDeltaMovement(Vec3.ZERO);
+                        tryLaunch(local, face, stack);
                         return;
                     }
+                    launchCharge = 0;
                     double speed = GougeConfig.INSTANCE.climbing.speed;
                     double dy = speed;
                     double dx = 0.0;
@@ -169,8 +189,8 @@ public final class GougeClientPhysics {
                     if (GougeConfig.INSTANCE.climbing.allow_diagonal) {
                         float leftIntent = mc.options.keyLeft.isDown() == mc.options.keyRight.isDown() ? 0.0F
                                 : (mc.options.keyLeft.isDown() ? 1.0F : -1.0F);
-                        dx = face.getStepZ() * leftIntent * (speed * 0.707);
-                        dz = -face.getStepX() * leftIntent * (speed * 0.707);
+                        dx = -face.getStepZ() * leftIntent * (speed * 0.707);
+                        dz = face.getStepX() * leftIntent * (speed * 0.707);
                     }
 
                     if (local.level().noCollision(local, local.getBoundingBox().move(dx, dy, dz))) {
@@ -186,7 +206,22 @@ public final class GougeClientPhysics {
                         stop(local);
                         return;
                     }
-                    local.setDeltaMovement(Vec3.ZERO);
+                    launchCharge = 0;
+                    Vec3 move = Vec3.ZERO;
+                    if (shimmy && pin != null && pinDir != null) {
+                        float intent = mc.options.keyLeft.isDown() ? 1.0F : -1.0F;
+                        Vec3 delta = GougePhysics.traverseDelta(local, pinDir, intent, stack);
+                        BlockPos next = GougePhysics.traverseCell(
+                                local.level(), pin, pinDir, local.position().add(delta.scale(4)), local.getY());
+                        if (next != null && local.level().noCollision(local, local.getBoundingBox().move(delta))) {
+                            pin = next;
+                            if (anchor != null) {
+                                anchor = anchor.add(delta.x, 0, delta.z);
+                            }
+                            move = delta;
+                        }
+                    }
+                    local.setDeltaMovement(move);
                 }
             } else {
                 hangLocked = false;
@@ -215,6 +250,25 @@ public final class GougeClientPhysics {
                 v.x * GougePhysics.HORIZONTAL_DAMPING, GougePhysics.softSlideVy(v.y, slideSpeed), v.z * GougePhysics.HORIZONTAL_DAMPING));
     }
 
+    private static void tryLaunch(LocalPlayer local, Direction face, ItemStack stack) {
+        GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
+        BlockPos cap = l.enabled
+                ? GougePhysics.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+        if (cap == null) {
+            launchCharge = 0;
+            return;
+        }
+        if (++launchCharge < (int) (l.charge_time * 20)) {
+            return;
+        }
+        local.setDeltaMovement(GougePhysics.launchVelocity(stack, GougePhysics.launchRise(local.level(), cap, local.getY())));
+        local.fallDistance = 0.0F;
+        stop(local);
+        mantledUntil = local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS;
+        assistTicks = GougePhysics.LAUNCH_ASSIST_TICKS;
+        assistDir = face;
+    }
+
     private static void start(LocalPlayer local) {
         predicting = true;
         if (anchor == null) {
@@ -227,6 +281,7 @@ public final class GougeClientPhysics {
         hangLocked = false;
         pin = null;
         pinDir = null;
+        launchCharge = 0;
         if (!predicting) {
             return;
         }
