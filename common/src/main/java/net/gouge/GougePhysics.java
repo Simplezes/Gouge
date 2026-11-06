@@ -63,6 +63,10 @@ public final class GougePhysics {
     private static final Map<UUID, Integer> mantled = new ConcurrentHashMap<>();
     private static final Map<UUID, InteractionHand> activeHand = new ConcurrentHashMap<>();
     private static final Map<UUID, ItemStack> activeStack = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> launchCharge = new ConcurrentHashMap<>();
+    private static final Map<UUID, int[]> launchAssist = new ConcurrentHashMap<>();
+
+    public static final int LAUNCH_ASSIST_TICKS = 26;
 
     private static volatile List<Map.Entry<TagKey<Item>, GougeConfig.PickaxeStats>> tagStatsCache;
 
@@ -110,7 +114,6 @@ public final class GougePhysics {
 
     private static final Map<UUID, HeldInput> heldInputs = new ConcurrentHashMap<>();
 
-    // vanilla only applies player-input packets to riders before 1.21.2, so the server records them itself
     public static void recordInput(ServerPlayer player, float strafe, boolean jump) {
         heldInputs.put(player.getUUID(), new HeldInput(serverTick(player), jump, Math.signum(strafe)));
     }
@@ -272,6 +275,108 @@ public final class GougePhysics {
         RELEASED
     }
 
+    public static int springLevel(ItemStack stack) {
+        return enchLevel(stack, GougeEnchantments.SPRING);
+    }
+
+    private static double springScale(ItemStack stack) {
+        return 1.0 + springLevel(stack) * GougeConfig.INSTANCE.enchantments.spring_bonus;
+    }
+
+    public static BlockPos handsCell(BlockPos pin, double feetY, double step) {
+        return new BlockPos(pin.getX(), Mth.floor(feetY + step + 1.0), pin.getZ());
+    }
+
+    public static BlockPos launchCap(Level world, BlockPos pin, double feetY, double step) {
+        BlockPos hands = handsCell(pin, feetY, step);
+        for (int i = 0; i < GougeConfig.INSTANCE.launch.max_cap_height; i++) {
+            BlockPos cell = hands.above(i);
+            BlockState st = world.getBlockState(cell);
+            if (st.getCollisionShape(world, cell).isEmpty()) {
+                return null;
+            }
+            if (canStandOnLedge(world, cell, st)) {
+                return cell;
+            }
+            if (isHardBlock(st)) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public static double riseOf(double boost) {
+        double y = 0;
+        double vy = boost;
+        for (int i = 0; i < 400 && vy > 0; i++) {
+            y += vy;
+            vy = (vy - 0.08) * 0.98;
+        }
+        return y;
+    }
+
+    public static double boostFor(double rise) {
+        double boost = 0.1;
+        while (boost < 2.0 && riseOf(boost) < rise) {
+            boost += 0.01;
+        }
+        return boost;
+    }
+
+    public static double launchRise(Level world, BlockPos cap, double feetY) {
+        return ledgeTopY(world, cap, world.getBlockState(cap)) - feetY + 0.4;
+    }
+
+    public static Vec3 launchVelocity(ItemStack stack, double neededRise) {
+        GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
+        double base = l.auto_height ? boostFor(neededRise) + 0.02 : l.upward_boost;
+        return new Vec3(0, base * springScale(stack), 0);
+    }
+
+    public static Vec3 assistPush(Level world, Player player, Direction face) {
+        Vec3 toward = new Vec3(-face.getStepX(), 0, -face.getStepZ());
+        if (GougeConfig.INSTANCE.launch.assist_speed <= 0
+                || !world.noCollision(player, player.getBoundingBox().move(toward.scale(0.3)))
+                || (player.getDeltaMovement().y <= 0 && !world.noCollision(player, player.getBoundingBox().move(0, -0.6, 0)))) {
+            return null;
+        }
+        return toward.scale(GougeConfig.INSTANCE.launch.assist_speed);
+    }
+
+    public static Vec3 traverseDelta(Player player, Direction face, float leftIntent, ItemStack stack) {
+        double speed = GougeConfig.INSTANCE.traverse.speed
+                * (1.0 + enchLevel(stack, GougeEnchantments.SHIMMY) * GougeConfig.INSTANCE.enchantments.traverse_bonus);
+        return new Vec3(-face.getStepZ() * leftIntent * speed, 0, face.getStepX() * leftIntent * speed);
+    }
+
+    public static BlockPos traverseCell(Level world, BlockPos pin, Direction face, Vec3 dest, double feetY) {
+        BlockPos column = tangentCell(pin, face, dest);
+        BlockPos body = new BlockPos(column.getX(), Mth.floor(feetY + 1.0), column.getZ());
+        BlockState st = world.getBlockState(body);
+        return !st.getCollisionShape(world, body).isEmpty() && isHardBlock(st) && st.getDestroySpeed(world, body) >= 0
+                ? body : null;
+    }
+
+    public static double blockGripMultiplier(BlockState state) {
+        var map = GougeConfig.INSTANCE.block_grip;
+        if (map.isEmpty()) {
+            return 1.0;
+        }
+        Double direct = map.get(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
+        if (direct != null) {
+            return direct;
+        }
+        for (var e : map.entrySet()) {
+            if (e.getKey().startsWith("#")) {
+                ResourceLocation tag = ResourceLocation.tryParse(e.getKey().substring(1));
+                if (tag != null && state.is(TagKey.create(Registries.BLOCK, tag))) {
+                    return e.getValue();
+                }
+            }
+        }
+        return 1.0;
+    }
+
     public static boolean isHardBlock(BlockState state) {
         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         String override = GougeConfig.INSTANCE.block_overrides.get(id.toString());
@@ -303,6 +408,8 @@ public final class GougePhysics {
         lastY.remove(id);
         gougeNoGravity.remove(id);
         activeUse.remove(id);
+        launchCharge.remove(id);
+        launchAssist.remove(id);
     }
 
     public static void markActive(UUID id, InteractionHand hand, ItemStack stack) {
@@ -374,6 +481,21 @@ public final class GougePhysics {
 
     public static void checkStale(ServerPlayer player) {
         UUID id = player.getUUID();
+        int[] assist = launchAssist.get(id);
+        if (assist != null) {
+            if (grounded(player) || --assist[0] <= 0) {
+                launchAssist.remove(id);
+            } else {
+                puff((ServerLevel) player.level(), ParticleTypes.CLOUD, player.getX(), player.getY() + 0.1, player.getZ(),
+                        2, 0.15, 0.05, 0.15, 0.01);
+                Vec3 push = assistPush(player.level(), player, Direction.from3DDataValue(assist[1]));
+                if (push != null) {
+                    Vec3 v = player.getDeltaMovement();
+                    player.setDeltaMovement(push.x, v.y, push.z);
+                    player.hurtMarked = true;
+                }
+            }
+        }
         if (player.onGround() && mantled.containsKey(id)) {
             if (isJumpHeld(player)) {
                 mantled.put(id, serverTick(player));
@@ -461,6 +583,7 @@ public final class GougePhysics {
         clearCrack(player);
         anchors.remove(player.getUUID());
         lastY.remove(player.getUUID());
+        launchCharge.remove(player.getUUID());
     }
 
     private static double actualVerticalSpeed(ServerPlayer player) {
@@ -590,7 +713,14 @@ public final class GougePhysics {
         BlockHitResult hHit = world.clip(new ClipContext(
                 start, start.add(horiz),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, user));
-        return resolveHit(hHit, user);
+        BlockHitResult flat = resolveHit(hHit, user);
+        if (flat != null) {
+            return flat;
+        }
+        Vec3 low = user.position().add(0, 0.9, 0);
+        return resolveHit(world.clip(new ClipContext(
+                low, low.add(horiz),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, user)), user);
     }
 
     public static boolean hasFallClearance(Level world, Player player, double minDistance) {
@@ -618,11 +748,11 @@ public final class GougePhysics {
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
         if (isHardBlock(state)) {
-            world.playSound(null, pos, sounds.getBreakSound(), SoundSource.PLAYERS, 2.0f, 0.5f);
-            world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 20, 0.2, 0.2, 0.2, 0.15);
+            sound(world, pos, sounds.getBreakSound(), 2.0f, 0.5f);
+            puff(world, ParticleTypes.CRIT, p.x, p.y, p.z, 20, 0.2, 0.2, 0.2, 0.15);
         } else {
-            world.playSound(null, pos, sounds.getBreakSound(), SoundSource.PLAYERS, 1.5f, 0.6f);
-            world.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
+            sound(world, pos, sounds.getBreakSound(), 1.5f, 0.6f);
+            puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
                     p.x, p.y, p.z, 25, 0.3, 0.3, 0.3, 0.0);
         }
     }
@@ -677,7 +807,8 @@ public final class GougePhysics {
         ClimbPin savedPin = climbPins.get(player.getUUID());
         boolean climbAllowed = GougeConfig.INSTANCE.climbing.enabled
                 && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
-        if (savedPin != null && savedPin.grabTick() == d[5] && climbAllowed && (hit == null || isJumpHeld(player))) {
+        boolean shimmy = traverseAllowed(player) && strafeIntent(player) != 0 && !(climbAllowed && isJumpHeld(player));
+        if (savedPin != null && savedPin.grabTick() == d[5] && ((climbAllowed && (hit == null || isJumpHeld(player))) || shimmy)) {
             BlockHitResult pinned = pinnedHit(world, climbFocus(world, savedPin.pos(), player.getY()), savedPin.face());
             if (pinned != null) {
                 hit = pinned;
@@ -749,7 +880,7 @@ public final class GougePhysics {
                 if (d[0] == -1) {
                     d[5] = now;
                     climbPins.put(player.getUUID(), new ClimbPin(now, pos, dir));
-                    d[7] = singlePickaxeHangTicks(useItem);
+                    d[7] = Math.max(1, (int) Math.round(singlePickaxeHangTicks(useItem) * blockGripMultiplier(state)));
                     boolean isDual = isDualGripActive(player);
                     d[6] = isDual ? 1 : 0;
                     int hangTicks = d[7];
@@ -783,7 +914,11 @@ public final class GougePhysics {
                     }
                 }
 
-                player.setDeltaMovement(Vec3.ZERO);
+                if (!isHoldingSpace || !canClimb) {
+                    launchCharge.remove(uid);
+                }
+                Vec3 shimmyMove = shimmy ? traverseStep(player, world, d, hit, state, hardness, now) : Vec3.ZERO;
+                player.setDeltaMovement(shimmyMove);
                 player.hurtMarked = true;
 
                 if (now % 20 == 0 && !drain(player)) {
@@ -791,8 +926,7 @@ public final class GougePhysics {
                     return false;
                 }
                 if (now % 20 == 10) {
-                    world.playSound(null, pos, SoundEvents.CHAIN_STEP, SoundSource.PLAYERS,
-                            0.4f, 0.8f + world.getRandom().nextFloat() * 0.2f);
+                    sound(world, pos, SoundEvents.CHAIN_STEP, 0.4f, 0.8f + world.getRandom().nextFloat() * 0.2f);
                 }
                 return true;
             }
@@ -885,7 +1019,7 @@ public final class GougePhysics {
             release(player);
             player.stopUsingItem();
             GougePhysics.clearActive(id);
-            world.playSound(null, ledge, SoundEvents.ARMOR_EQUIP_GENERIC, SoundSource.PLAYERS, 0.6f, 1.2f);
+            sound(world, ledge, SoundEvents.ARMOR_EQUIP_GENERIC, 0.6f, 1.2f);
             return ClimbResult.RELEASED;
         }
 
@@ -894,8 +1028,9 @@ public final class GougePhysics {
         }
 
         if (softAhead(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed)) {
-            return ClimbResult.BLOCKED;
+            return tryLaunch(player, world, dir, pin, now);
         }
+        launchCharge.remove(id);
         double speed = GougeConfig.INSTANCE.climbing.speed;
         double dy = speed;
         double dx = 0.0;
@@ -904,8 +1039,8 @@ public final class GougePhysics {
         if (GougeConfig.INSTANCE.climbing.allow_diagonal) {
             float leftIntent = strafeIntent(player);
             if (leftIntent != 0) {
-                double tx = dir.getStepZ();
-                double tz = -dir.getStepX();
+                double tx = -dir.getStepZ();
+                double tz = dir.getStepX();
                 dx = tx * leftIntent * (speed * 0.707);
                 dz = tz * leftIntent * (speed * 0.707);
             }
@@ -951,14 +1086,120 @@ public final class GougePhysics {
             }
         }
 
+        if (now % 5 == 0) {
+            chips(world, player, dir, world.getBlockState(pin), 4, 0.05);
+        }
         if (now % 10 == 0) {
-            world.playSound(null, destBlockPos, SoundEvents.CHAIN_STEP, SoundSource.PLAYERS,
-                    0.4f, 1.2f + world.getRandom().nextFloat() * 0.2f);
-            world.sendParticles(ParticleTypes.CRIT, contact.x, contact.y, contact.z,
+            sound(world, destBlockPos, SoundEvents.CHAIN_STEP, 0.4f, 1.2f + world.getRandom().nextFloat() * 0.2f);
+            puff(world, ParticleTypes.CRIT, contact.x, contact.y, contact.z,
                     2, 0.05, 0.05, 0.05, 0.05);
         }
 
         return ClimbResult.SUCCESS;
+    }
+
+    private static void sound(ServerLevel world, BlockPos pos, net.minecraft.sounds.SoundEvent event, float volume, float pitch) {
+        GougeConfig.Effects fx = GougeConfig.INSTANCE.effects;
+        float v = volume * (float) fx.volume;
+        if (fx.sounds && v > 0) {
+            world.playSound(null, pos, event, SoundSource.PLAYERS, v, pitch);
+        }
+    }
+
+    private static void puff(ServerLevel world, net.minecraft.core.particles.ParticleOptions type, double x, double y, double z,
+            int count, double dx, double dy, double dz, double speed) {
+        if (GougeConfig.INSTANCE.effects.particles) {
+            world.sendParticles(type, x, y, z, count, dx, dy, dz, speed);
+        }
+    }
+
+    private static void chips(ServerLevel world, ServerPlayer player, Direction face, BlockState state, int count, double speed) {
+        Vec3 at = player.position().add(0, 1.0, 0).subtract(face.getStepX() * 0.45, 0, face.getStepZ() * 0.45);
+        puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state), at.x, at.y, at.z, count, 0.25, 0.35, 0.25, speed);
+    }
+
+    private static boolean traverseAllowed(ServerPlayer player) {
+        GougeConfig.Traverse t = GougeConfig.INSTANCE.traverse;
+        return t.enabled && (!t.requires_dual || isDualGripActive(player));
+    }
+
+    private static Vec3 traverseStep(ServerPlayer player, ServerLevel world, int[] d, BlockHitResult hit,
+            BlockState state, float hardness, int now) {
+        UUID id = player.getUUID();
+        ClimbPin saved = climbPins.get(id);
+        if (saved == null || saved.grabTick() != d[5]) {
+            return Vec3.ZERO;
+        }
+        Vec3 delta = traverseDelta(player, saved.face(), strafeIntent(player), player.getUseItem());
+        BlockPos next = traverseCell(world, saved.pos(), saved.face(), player.position().add(delta.scale(4)), player.getY());
+        if (next == null || !world.noCollision(player, player.getBoundingBox().move(delta))) {
+            return Vec3.ZERO;
+        }
+        climbPins.put(id, new ClimbPin(saved.grabTick(), next, saved.face()));
+        Vec3 anchor = anchors.get(id);
+        if (anchor != null) {
+            anchors.put(id, anchor.add(delta.x, 0, delta.z));
+        }
+        BlockState wall = world.getBlockState(next);
+        BlockHitResult pinned = pinnedHit(world, next, saved.face());
+        if (!next.equals(saved.pos())) {
+            clearCrack(player);
+        }
+        if (pinned != null) {
+            updateClimbFx(player, world, pinned, next, wall, Math.max(0f, wall.getDestroySpeed(world, next)), now);
+        }
+        if (now % 3 == 0) {
+            chips(world, player, saved.face(), wall, 5, 0.04);
+        }
+        if (now % 5 == 0) {
+            var snd = wall.getSoundType();
+            sound(world, next, snd.getHitSound(), 0.7f, 0.75f + world.getRandom().nextFloat() * 0.3f);
+        }
+        int cost = GougeConfig.INSTANCE.traverse.durability_cost;
+        if (cost > 0 && now % 20 == 0) {
+            player.getUseItem().hurtAndBreak(cost, player, item -> {});
+        }
+        return delta;
+    }
+
+    private static ClimbResult tryLaunch(ServerPlayer player, ServerLevel world, Direction dir, BlockPos pin, int now) {
+        GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
+        UUID id = player.getUUID();
+        BlockPos cap = l.enabled ? launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+        if (cap == null) {
+            launchCharge.remove(id);
+            return ClimbResult.BLOCKED;
+        }
+        BlockPos hands = handsCell(pin, player.getY(), GougeConfig.INSTANCE.climbing.speed);
+        BlockState capState = world.getBlockState(hands);
+        int charged = launchCharge.merge(id, 1, Integer::sum);
+        if (charged < (int) (l.charge_time * 20)) {
+            if (charged % 2 == 1) {
+                chips(world, player, dir, capState, 4, 0.02);
+            }
+            if (charged % 4 == 1) {
+                sound(world, hands, capState.getSoundType().getHitSound(), 0.8f, 0.55f);
+            }
+            return ClimbResult.BLOCKED;
+        }
+        launchCharge.remove(id);
+        ItemStack stack = player.getUseItem();
+        player.setDeltaMovement(launchVelocity(stack, launchRise(world, cap, player.getY())));
+        player.fallDistance = 0.0F;
+        player.hurtMarked = true;
+        mantled.put(id, now);
+        launchAssist.put(id, new int[]{LAUNCH_ASSIST_TICKS, dir.get3DDataValue()});
+        player.setNoGravity(false);
+        gougeNoGravity.remove(id);
+        release(player);
+        player.stopUsingItem();
+        clearActive(id);
+        Vec3 at = player.position().add(0, 1.0, 0).subtract(dir.getStepX() * 0.4, 0, dir.getStepZ() * 0.4);
+        sound(world, hands, capState.getSoundType().getBreakSound(), 1.3f, 0.8f);
+        sound(world, pin, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.9f, 1.4f);
+        puff(world, new BlockParticleOption(ParticleTypes.BLOCK, capState), at.x, at.y, at.z, 30, 0.35, 0.3, 0.35, 0.12);
+        puff(world, ParticleTypes.CLOUD, player.getX(), player.getY() + 0.2, player.getZ(), 14, 0.25, 0.1, 0.25, 0.06);
+        return ClimbResult.RELEASED;
     }
 
     private static boolean drain(ServerPlayer player) {
@@ -1012,15 +1253,16 @@ public final class GougePhysics {
 
         var dir = hit.getDirection();
         Vec3 normal = new Vec3(dir.getStepX(), dir.getStepY(), dir.getStepZ());
-        double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost;
-        double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost;
+        double spring = springScale(player.getUseItem());
+        double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost * spring;
+        double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost * spring;
         player.setDeltaMovement(normal.scale(kickH).add(0, kickV, 0));
         player.hurtMarked = true;
 
-        world.playSound(null, hit.getBlockPos(), SoundEvents.PLAYER_ATTACK_KNOCKBACK,
-                SoundSource.PLAYERS, 1.0f, 1.2f);
-        world.sendParticles(ParticleTypes.CRIT, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z,
+        sound(world, hit.getBlockPos(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0f, 1.2f);
+        puff(world, ParticleTypes.CRIT, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z,
                 15, 0.2, 0.2, 0.2, 0.25);
+        chips(world, player, dir, world.getBlockState(hit.getBlockPos()), 20, 0.12);
         return true;
     }
 
@@ -1043,8 +1285,8 @@ public final class GougePhysics {
 
     private static void spawnSlip(ServerLevel world, Vec3 p) {
         BlockPos pos = BlockPos.containing(p);
-        world.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.4f);
-        world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 30, 0.3, 0.3, 0.3, 0.2);
+        sound(world, pos, SoundEvents.ITEM_BREAK, 1.0f, 1.4f);
+        puff(world, ParticleTypes.CRIT, p.x, p.y, p.z, 30, 0.3, 0.3, 0.3, 0.2);
     }
 
     private static void spawnJuice(ServerLevel world, BlockHitResult hit, BlockState state, float hardness) {
@@ -1052,16 +1294,15 @@ public final class GougePhysics {
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
         if (isHardBlock(state)) {
-            world.playSound(null, pos, sounds.getHitSound(), SoundSource.PLAYERS,
-                    0.6f, 0.6f + world.getRandom().nextFloat() * 0.2f);
-            world.sendParticles(ParticleTypes.CRIT, p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.05);
+            sound(world, pos, sounds.getHitSound(), 0.6f, 0.6f + world.getRandom().nextFloat() * 0.2f);
+            puff(world, ParticleTypes.CRIT, p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.05);
             double ox = hit.getDirection().getStepX() * 0.15;
             double oz = hit.getDirection().getStepZ() * 0.15;
-            world.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
+            puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
                     p.x + ox, p.y + 0.3, p.z + oz, 8, 0.05, 0.3, 0.05, 0.08);
         } else {
-            world.playSound(null, pos, sounds.getHitSound(), SoundSource.PLAYERS, 0.5f, 1.0f);
-            world.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
+            sound(world, pos, sounds.getHitSound(), 0.5f, 1.0f);
+            puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
                     p.x, p.y, p.z, 6, 0.15, 0.15, 0.15, 0.0);
         }
     }
