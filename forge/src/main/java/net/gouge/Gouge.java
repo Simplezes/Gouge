@@ -25,6 +25,8 @@ public class Gouge {
             DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, MOD_ID);
     private static final RegistryObject<Enchantment> GRIP = ENCHANTMENTS.register("grip", GougeEnchantment::new);
     private static final RegistryObject<Enchantment> MOMENTUM = ENCHANTMENTS.register("momentum", GougeEnchantment::new);
+    private static final RegistryObject<Enchantment> SPRING = ENCHANTMENTS.register("spring", GougeEnchantment::new);
+    private static final RegistryObject<Enchantment> SHIMMY = ENCHANTMENTS.register("shimmy", GougeEnchantment::new);
 
     public Gouge() {
         GougePlatform.set(new ForgePlatform());
@@ -38,6 +40,8 @@ public class Gouge {
     private void onCommonSetup(FMLCommonSetupEvent event) {
         GougeEnchantments.GRIP = GRIP.get();
         GougeEnchantments.MOMENTUM = MOMENTUM.get();
+        GougeEnchantments.SPRING = SPRING.get();
+        GougeEnchantments.SHIMMY = SHIMMY.get();
     }
 
     @SubscribeEvent

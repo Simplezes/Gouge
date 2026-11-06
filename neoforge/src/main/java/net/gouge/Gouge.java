@@ -7,6 +7,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -23,8 +26,10 @@ public class Gouge {
             DeferredRegister.create(Registries.ENCHANTMENT, MOD_ID);
     private static final DeferredHolder<Enchantment, Enchantment> GRIP = ENCHANTMENTS.register("grip", GougeEnchantment::new);
     private static final DeferredHolder<Enchantment, Enchantment> MOMENTUM = ENCHANTMENTS.register("momentum", GougeEnchantment::new);
+    private static final DeferredHolder<Enchantment, Enchantment> SPRING = ENCHANTMENTS.register("spring", GougeEnchantment::new);
+    private static final DeferredHolder<Enchantment, Enchantment> SHIMMY = ENCHANTMENTS.register("shimmy", GougeEnchantment::new);
 
-    public Gouge(IEventBus modEventBus) {
+    public Gouge(IEventBus modEventBus, ModContainer container) {
         GougePlatform.set(new NeoForgePlatform());
         GougeConfig.load();
         ENCHANTMENTS.register(modEventBus);
@@ -32,11 +37,16 @@ public class Gouge {
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("cloth_config")) {
+            net.gouge.extern.cloth.ClothConfigBridge.register(container);
+        }
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {
         GougeEnchantments.GRIP = GRIP.get();
         GougeEnchantments.MOMENTUM = MOMENTUM.get();
+        GougeEnchantments.SPRING = SPRING.get();
+        GougeEnchantments.SHIMMY = SHIMMY.get();
     }
 
     private void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {

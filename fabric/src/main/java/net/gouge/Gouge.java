@@ -23,6 +23,10 @@ public class Gouge implements ModInitializer {
                 new ResourceLocation(MOD_ID, "grip"), new GougeEnchantment());
         GougeEnchantments.MOMENTUM = Registry.register(BuiltInRegistries.ENCHANTMENT,
                 new ResourceLocation(MOD_ID, "momentum"), new GougeEnchantment());
+        GougeEnchantments.SPRING = Registry.register(BuiltInRegistries.ENCHANTMENT,
+                new ResourceLocation(MOD_ID, "spring"), new GougeEnchantment());
+        GougeEnchantments.SHIMMY = Registry.register(BuiltInRegistries.ENCHANTMENT,
+                new ResourceLocation(MOD_ID, "shimmy"), new GougeEnchantment());
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             if (handler.player.isNoGravity()) {
