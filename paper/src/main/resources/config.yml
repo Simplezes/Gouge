@@ -56,8 +56,8 @@ use_heartbeat_ticks: 6
 climbing:
   # Look up while gripping a wall to climb it.
   enabled: true
-  # Pitch in degrees you must look past to climb (negative = up, -90 = straight up).
-  look_pitch: -60.0
+  # Pitch in degrees you must look past to climb (negative = up, -90 = straight up). Range: -85 - -10
+  look_pitch: -30.0
   # true = needs a pickaxe in both hands, false = one is enough.
   requires_dual: true
   # Upward speed in blocks per tick. Range: 0.01 - 0.5
@@ -68,6 +68,8 @@ climbing:
   durability_cost: 1
   # Two pickaxes held: damage both while climbing (true) or only the active one (false).
   damage_both_tools: true
+  # Stop climbing when a soft block (dirt, sand) is at hand height. With launch on, you push over it.
+  stop_at_soft_block: true
 
 traverse:
   # Look sideways along the wall while hanging to shimmy that way.
@@ -78,17 +80,17 @@ traverse:
   speed: 0.06
   # Extra durability drained per second while shimmying. 0 = none.
   durability_cost: 0
-  # Degrees you must turn away from the wall to start shimmying. Range: 20 - 85
-  look_yaw: 55.0
+  # Degrees you must turn away from the wall to start shimmying. Range: 10 - 85
+  look_yaw: 30.0
 
 launch:
   # Keep climbing against a short soft cap (dirt, grass...) on top of the rock to spring over it.
   enabled: true
   # Seconds of climbing into the cap before launching. Range: 0.0 - 5.0
   charge_time: 0.3
-  # Minimum upward launch power. With auto_height the launch gets stronger for taller caps. Range: 0.1 - 2.0
+  # Upward launch power used when auto_height is off. Range: 0.1 - 2.0
   upward_boost: 0.75
-  # Strengthen the launch just enough to reach the top of the cap (1-4 blocks all work).
+  # Size the launch to land you on top of the cap (1-4 blocks all work, no overshoot).
   auto_height: true
   # Push towards the wall while rising so you land on top. 0 = off. Range: 0.0 - 0.5
   assist_speed: 0.15

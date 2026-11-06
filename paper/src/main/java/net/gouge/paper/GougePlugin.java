@@ -358,7 +358,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         Hit hit = raycast(p);
         if (s.pin != null && s.hangEnd != -1 && ((space && canClimb) || shim != 0)) {
             Block focus = p.getWorld().getBlockAt(s.pin.getX(), (int) Math.floor(p.getLocation().getY() + 1), s.pin.getZ());
-            Block b = focus.getType().isAir() ? s.pin : focus;
+            Block b = focus.getType().isAir() || !isHard(focus) ? s.pin : focus;
             if (!b.getType().isAir()) hit = new Hit(b, s.pinFace, center(b).add(faceVec(s.pinFace).multiply(0.5)));
         }
         if (hit == null || !hit.face.isCartesian() || hit.face.getModY() != 0) return false;
@@ -467,11 +467,14 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         BlockFace face = s.pinFace;
         if (wallDistance(s.pin, face, loc) > cfg.getDouble("climbing.reach")) return 0;
         Block ledge = climbLedge(w, s.pin.getX(), s.pin.getZ(), loc.getY());
-        if (ledge != null && !isHard(ledge) && tryLaunch(p, s, tool)) return 2;
-        if (ledge == null || !isHard(ledge) || ledge.getType().getHardness() < 0) return 0;
+        Block hands = w.getBlockAt(s.pin.getX(), (int) Math.floor(loc.getY() + cfg.getDouble("climbing.speed") + 1.0), s.pin.getZ());
+        if (solid(hands) && !isHard(hands) && cfg.getBoolean("climbing.stop_at_soft_block")) {
+            return tryLaunch(p, s, tool) ? 2 : 0;
+        }
         s.launchCharge = 0;
+        if (ledge == null || ledge.getType().getHardness() < 0) return 0;
 
-        if (canStand(ledge) && loc.getY() >= ledgeTop(ledge) - 0.45) {
+        if (isHard(ledge) && canStand(ledge) && loc.getY() >= ledgeTop(ledge) - 0.45) {
             double dx = ledge.getX() + 0.5 - loc.getX(), dz = ledge.getZ() + 0.5 - loc.getZ();
             double len = Math.sqrt(dx * dx + dz * dz);
             double fx = len > 1e-4 ? dx / len : -face.getModX(), fz = len > 1e-4 ? dz / len : -face.getModZ();
@@ -616,7 +619,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         p.setFallDistance(0f);
         double base = cfg.getDouble("launch.upward_boost");
         if (cfg.getBoolean("launch.auto_height")) {
-            base = Math.max(base, boostFor(ledgeTop(cap) - loc.getY() + 0.4));
+            base = boostFor(ledgeTop(cap) - loc.getY() + 0.4) + 0.02;
         }
         p.setVelocity(new Vector(0, base * spring(tool), 0));
         mantled.put(p.getUniqueId(), now);
@@ -659,6 +662,7 @@ public final class GougePlugin extends JavaPlugin implements Listener {
         Vector toward = new Vector(-f.getModX(), 0, -f.getModZ());
         if (speed <= 0 || collides(p.getWorld(), p.getBoundingBox().shift(toward.clone().multiply(0.3)))) return;
         Vector v = p.getVelocity();
+        if (v.getY() <= 0 && collides(p.getWorld(), p.getBoundingBox().shift(0, -0.6, 0))) return;
         p.setVelocity(new Vector(toward.getX() * speed, v.getY(), toward.getZ() * speed));
     }
 
