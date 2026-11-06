@@ -68,7 +68,7 @@ public final class GougeClientPhysics {
         }
 
         Vec3 v = local.getDeltaMovement();
-        if (predicting && v.y > 0.01 && !mc.options.keyJump.isDown()) {
+        if (predicting && !hangLocked && v.y > 0.01 && !mc.options.keyJump.isDown()) {
             stop(local);
             return;
         }

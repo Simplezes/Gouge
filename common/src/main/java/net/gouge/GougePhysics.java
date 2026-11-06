@@ -325,7 +325,7 @@ public final class GougePhysics {
 
     public static void releaseCooldown(ServerPlayer player) {
         int ticks = (int) (GougeConfig.INSTANCE.mechanics.release_cooldown * 20);
-        if (ticks <= 0 || player.onGround() || hasMantled(player)) {
+        if (ticks <= 0 || grounded(player) || hasMantled(player)) {
             return;
         }
         for (ItemStack s : new ItemStack[]{activeStack.getOrDefault(player.getUUID(), ItemStack.EMPTY), player.getMainHandItem(), player.getOffhandItem()}) {
@@ -354,7 +354,7 @@ public final class GougePhysics {
                 return false;
             }
         }
-        if (player.onGround() || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
+        if (grounded(player) || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
                 || player.getCooldowns().isOnCooldown(pick.getItem())
                 || !hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
             return false;
@@ -365,6 +365,10 @@ public final class GougePhysics {
 
     public static void setAnchor(UUID id, Vec3 pos) {
         anchors.put(id, pos);
+    }
+
+    public static boolean grounded(Player player) {
+        return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
     }
 
     public static boolean isActive(UUID id) {
@@ -657,7 +661,7 @@ public final class GougePhysics {
     }
 
     private static boolean tick0(ServerPlayer player, int[] d) {
-        if (player.onGround() || player.isSpectator() || player.getAbilities().flying) {
+        if (grounded(player) || player.isSpectator() || player.getAbilities().flying) {
             release(player);
             return false;
         }
@@ -686,7 +690,7 @@ public final class GougePhysics {
         ClimbPin savedPin = climbPins.get(player.getUUID());
         boolean climbAllowed = GougeConfig.INSTANCE.climbing.enabled
                 && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
-        if (savedPin != null && savedPin.grabTick() == d[5] && climbAllowed && isJumpHeld(player)) {
+        if (savedPin != null && savedPin.grabTick() == d[5] && climbAllowed && (hit == null || isJumpHeld(player))) {
             BlockHitResult pinned = pinnedHit(world, climbFocus(world, savedPin.pos(), player.getY()), savedPin.face());
             if (pinned != null) {
                 hit = pinned;
