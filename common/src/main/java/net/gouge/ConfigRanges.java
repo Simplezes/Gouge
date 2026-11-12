@@ -21,6 +21,9 @@ public final class ConfigRanges {
         RANGES.put("mechanics.max_drift", new double[]{0, 16});
         RANGES.put("mechanics.dual_grip_multiplier", new double[]{1, 10});
         RANGES.put("mechanics.release_cooldown", new double[]{0, 600});
+        RANGES.put("mechanics.stamina_hang_cost", new double[]{0, 100});
+        RANGES.put("mechanics.stamina_climb_cost", new double[]{0, 100});
+        RANGES.put("mechanics.stamina_shimmy_cost", new double[]{0, 100});
         RANGES.put("mechanics.soft_slide_ramp", new double[]{0, 1});
         RANGES.put("climbing.speed", new double[]{0.01, 0.5});
         RANGES.put("climbing.reach", new double[]{0.5, 32});
