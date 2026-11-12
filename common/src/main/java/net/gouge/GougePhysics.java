@@ -478,6 +478,10 @@ public final class GougePhysics {
         return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
     }
 
+    public static boolean modStamina() {
+        return GougeConfig.INSTANCE.mechanics.use_mod_stamina && GougePlatform.get().hasModStamina();
+    }
+
     public static boolean isActive(UUID id) {
         return activeUse.contains(id);
     }
@@ -906,7 +910,10 @@ public final class GougePhysics {
                     d[0] = d[5] + d[7];
                 }
 
-                if (!GougeConfig.INSTANCE.mechanics.unlimited_grip && now >= d[0]) {
+                boolean gripSpent = modStamina()
+                        ? GougePlatform.get().staminaExhausted(player)
+                        : !GougeConfig.INSTANCE.mechanics.unlimited_grip && now >= d[0];
+                if (gripSpent) {
                     startCooldown(player, d);
                     spawnSlip(world, hit.getLocation());
                     release(player);
