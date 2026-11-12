@@ -109,6 +109,10 @@ public class GougeConfig {
         d.mechanics.dual_grip_multiplier = num(c, "mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
         d.mechanics.unlimited_grip = bool(c, "mechanics.unlimited_grip", d.mechanics.unlimited_grip);
         d.mechanics.release_cooldown = num(c, "mechanics.release_cooldown", d.mechanics.release_cooldown);
+        d.mechanics.use_mod_stamina = bool(c, "mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
+        d.mechanics.stamina_hang_cost = num(c, "mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
+        d.mechanics.stamina_climb_cost = num(c, "mechanics.stamina_climb_cost", d.mechanics.stamina_climb_cost);
+        d.mechanics.stamina_shimmy_cost = num(c, "mechanics.stamina_shimmy_cost", d.mechanics.stamina_shimmy_cost);
         d.mechanics.block_other_hand = bool(c, "mechanics.block_other_hand", d.mechanics.block_other_hand);
         d.mechanics.soft_slide_ramp = num(c, "mechanics.soft_slide_ramp", d.mechanics.soft_slide_ramp);
 
@@ -254,6 +258,23 @@ public class GougeConfig {
                  from the pickaxe), how long before you can grab again (in seconds). This makes
                  releasing cost some height. Never shortens a longer slip/wall-jump cooldown.
                  Set to 0 to disable. Range: 0 - 600""");
+        c.set("mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
+        c.setComment("mechanics.use_mod_stamina", """
+                 When a stamina mod (ParCool) is installed, gripping, climbing and shimmying
+                 spend its stamina instead of using the hang_time grip timer. You slip when it
+                 runs out. Has no effect without such a mod. Set to false to always use hang_time.""");
+        c.set("mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
+        c.setComment("mechanics.stamina_hang_cost", """
+                 Stamina spent per second while hanging, as a percent of the stamina bar.
+                 Only used with use_mod_stamina. Range: 0 - 100""");
+        c.set("mechanics.stamina_climb_cost", d.mechanics.stamina_climb_cost);
+        c.setComment("mechanics.stamina_climb_cost", """
+                 Stamina spent per second while climbing, as a percent of the stamina bar.
+                 Only used with use_mod_stamina. Range: 0 - 100""");
+        c.set("mechanics.stamina_shimmy_cost", d.mechanics.stamina_shimmy_cost);
+        c.setComment("mechanics.stamina_shimmy_cost", """
+                 Stamina spent per second while shimmying sideways, as a percent of the stamina bar.
+                 Only used with use_mod_stamina. Range: 0 - 100""");
         c.set("mechanics.block_other_hand", d.mechanics.block_other_hand);
         c.setComment("mechanics.block_other_hand", """
                  While a pickaxe in one hand can grip a wall (or is gripping), items in the other
@@ -498,6 +519,9 @@ public class GougeConfig {
         c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
         c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
         c.mechanics.release_cooldown = clamp("mechanics.release_cooldown", c.mechanics.release_cooldown, 0.0, 600.0);
+        c.mechanics.stamina_hang_cost = clamp("mechanics.stamina_hang_cost", c.mechanics.stamina_hang_cost, 0.0, 100.0);
+        c.mechanics.stamina_climb_cost = clamp("mechanics.stamina_climb_cost", c.mechanics.stamina_climb_cost, 0.0, 100.0);
+        c.mechanics.stamina_shimmy_cost = clamp("mechanics.stamina_shimmy_cost", c.mechanics.stamina_shimmy_cost, 0.0, 100.0);
         c.mechanics.soft_slide_ramp = clamp("mechanics.soft_slide_ramp", c.mechanics.soft_slide_ramp, 0.0, 1.0);
 
         c.wall_jump.time_window = clamp("wall_jump.time_window", c.wall_jump.time_window, 0.05, 5.0);
@@ -603,6 +627,10 @@ public class GougeConfig {
         public double dual_grip_multiplier = 1.5;
         public boolean unlimited_grip = false;
         public double release_cooldown = 0.5;
+        public boolean use_mod_stamina = true;
+        public double stamina_hang_cost = 4.0;
+        public double stamina_climb_cost = 8.0;
+        public double stamina_shimmy_cost = 8.0;
         public boolean block_other_hand = true;
         public double soft_slide_ramp = 0.05;
     }

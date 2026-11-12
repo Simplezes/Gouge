@@ -125,6 +125,18 @@ public final class GougeClientPhysics {
             stop(local);
             return;
         }
+        if (GougePhysics.modStamina()) {
+            if (GougePlatform.get().staminaExhausted(local)) {
+                stop(local);
+                return;
+            }
+            if (predicting && GougePhysics.isHardBlock(state)) {
+                GougeConfig.Mechanics m = GougeConfig.INSTANCE.mechanics;
+                double perSecond = mc.options.keyJump.isDown() && climbOk ? m.stamina_climb_cost
+                        : shimmy ? m.stamina_shimmy_cost : m.stamina_hang_cost;
+                GougePlatform.get().spendStamina(local, perSecond / 2000.0);
+            }
+        }
         if (!GougeConfig.INSTANCE.mechanics.client_prediction) {
             start(local);
             return;
