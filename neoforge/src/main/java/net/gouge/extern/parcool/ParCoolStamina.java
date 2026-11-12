@@ -16,6 +16,7 @@ public final class ParCoolStamina {
     private static final boolean MODERN;
     private static final boolean LEGACY;
     private static double carry;
+    private static boolean spendWarned;
 
     static {
         boolean modern = false;
@@ -33,11 +34,11 @@ public final class ParCoolStamina {
             modern = localGet != null;
         } catch (ReflectiveOperationException | LinkageError e) {
             try {
-                Class<?> stamina = Class.forName("com.alrex.parcool.common.capability.IStamina");
+                Class<?> stamina = Class.forName("com.alrex.parcool.api.Stamina");
                 readableGet = stamina.getMethod("get", Player.class);
                 isExhausted = stamina.getMethod("isExhausted");
-                value = stamina.getMethod("getActualValue");
-                max = stamina.getMethod("getMaxStamina");
+                value = stamina.getMethod("getValue");
+                max = stamina.getMethod("getMaxValue");
                 consume = stamina.getMethod("consume", int.class);
                 legacy = true;
             } catch (ReflectiveOperationException | LinkageError e2) {
@@ -93,7 +94,10 @@ public final class ParCoolStamina {
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException e) {
-            LogUtils.getLogger().debug("[Gouge] ParCool stamina spend failed: {}", e.toString());
+            if (!spendWarned) {
+                spendWarned = true;
+                LogUtils.getLogger().warn("[Gouge] ParCool stamina spend failed", e);
+            }
         }
     }
 }

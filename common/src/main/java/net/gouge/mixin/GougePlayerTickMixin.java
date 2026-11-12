@@ -16,4 +16,12 @@ public abstract class GougePlayerTickMixin {
             net.gouge.GougeClientPhysics.clientTick(self);
         }
     }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void gouge$flushStamina(CallbackInfo ci) {
+        Player self = (Player) (Object) this;
+        if (self.level().isClientSide) {
+            net.gouge.GougeClientPhysics.flushStamina(self);
+        }
+    }
 }
