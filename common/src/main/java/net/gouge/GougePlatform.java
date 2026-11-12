@@ -1,5 +1,6 @@
 package net.gouge;
 
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.nio.file.Path;
@@ -13,6 +14,17 @@ public interface GougePlatform {
 
     default boolean blocksGouge(UUID playerId) {
         return false;
+    }
+
+    default boolean hasModStamina() {
+        return false;
+    }
+
+    default boolean staminaExhausted(Player player) {
+        return false;
+    }
+
+    default void spendStamina(Player player, double fractionOfMax) {
     }
 
     static void set(GougePlatform platform) {
