@@ -48,7 +48,8 @@ public final class ParCoolCompat {
     private static final class Listener {
         @SubscribeEvent
         public void onTryToStart(ParCoolActionEvent.TryToStartEvent event) {
-            if (isWallAction(event.getAction()) && GougePhysics.isActive(event.getPlayer().getUUID())) {
+            if (isWallAction(event.getAction()) && (GougePhysics.isActive(event.getPlayer().getUUID())
+                    || event.getPlayer().level().isClientSide() && net.gouge.GougeClientPhysics.isGripping())) {
                 event.setCanceled(true);
             }
         }

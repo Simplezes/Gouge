@@ -21,10 +21,19 @@ public final class GougeClientPhysics {
     private static BlockPos pin;
     private static Direction pinDir;
     private static int launchCharge;
+    private static double pendingStamina;
     private static int assistTicks;
     private static Direction assistDir;
 
     private GougeClientPhysics() {
+    }
+
+    public static void flushStamina(Player player) {
+        if (pendingStamina > 0) {
+            double amount = pendingStamina;
+            pendingStamina = 0;
+            GougePlatform.get().spendStamina(player, amount);
+        }
     }
 
     public static boolean isGripping() {
@@ -138,7 +147,7 @@ public final class GougeClientPhysics {
                 GougeConfig.Mechanics m = GougeConfig.INSTANCE.mechanics;
                 double perSecond = mc.options.keyJump.isDown() && climbOk ? m.stamina_climb_cost
                         : shimmy ? m.stamina_shimmy_cost : m.stamina_hang_cost;
-                GougePlatform.get().spendStamina(local, perSecond / 2000.0);
+                pendingStamina += perSecond / 2000.0;
             }
         }
         if (!GougeConfig.INSTANCE.mechanics.client_prediction) {
