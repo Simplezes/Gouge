@@ -3,6 +3,9 @@ package net.gouge;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.gouge.config.ConfigData;
+import net.gouge.config.ConfigRanges;
+import net.gouge.config.GougeConfig;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -20,17 +23,17 @@ public final class GougeConfigScreen {
                 .setTitle(Component.literal("Gouge"))
                 .setSavingRunnable(GougeConfig::save);
         ConfigEntryBuilder entries = builder.entryBuilder();
-        GougeConfig.ConfigData current = GougeConfig.INSTANCE;
-        GougeConfig.ConfigData defaults = new GougeConfig.ConfigData();
+        ConfigData current = GougeConfig.INSTANCE;
+        ConfigData defaults = new ConfigData();
         for (String name : ConfigRanges.SECTIONS) {
             section(builder, entries, name, read(current, name), read(defaults, name));
         }
         return builder.build();
     }
 
-    private static Object read(GougeConfig.ConfigData data, String name) {
+    private static Object read(ConfigData data, String name) {
         try {
-            return GougeConfig.ConfigData.class.getField(name).get(data);
+            return ConfigData.class.getField(name).get(data);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
