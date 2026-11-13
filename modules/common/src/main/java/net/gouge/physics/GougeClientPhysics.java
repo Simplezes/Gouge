@@ -1,5 +1,8 @@
-package net.gouge;
+package net.gouge.physics;
 
+import net.gouge.config.ConfigData;
+import net.gouge.config.GougeConfig;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -40,7 +43,7 @@ public final class GougeClientPhysics {
             if (GougePhysics.grounded(local) || --assistTicks <= 0) {
                 assistTicks = 0;
             } else {
-                Vec3 push = GougePhysics.assistPush(local.level(), local, assistDir);
+                Vec3 push = GripMotion.assistPush(local.level(), local, assistDir);
                 if (push != null) {
                     Vec3 mv = local.getDeltaMovement();
                     local.setDeltaMovement(push.x, mv.y, push.z);
@@ -48,7 +51,7 @@ public final class GougeClientPhysics {
             }
         }
         if (local.onGround() && mantledUntil != 0) {
-            mantledUntil = mc.options.keyJump.isDown() ? local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS : 0;
+            mantledUntil = mc.options.keyJump.isDown() ? local.tickCount + GripState.MANTLE_REGRAB_TICKS : 0;
         }
         if (mc.screen != null || !mc.options.keyUse.isDown()) {
             stop(local);
@@ -58,19 +61,19 @@ public final class GougeClientPhysics {
             stop(local);
             return;
         }
-        if (!predicting && !GougePhysics.hasFallClearance(local.level(), local, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
+        if (!predicting && !WallRaycast.hasFallClearance(local.level(), local, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
             stop(local);
             return;
         }
 
-        if (local.isUsingItem() && !GougePhysics.isPickaxe(local.getUseItem())) {
+        if (local.isUsingItem() && !Pickaxes.isPickaxe(local.getUseItem())) {
             stop(local);
             return;
         }
         ItemStack stack = local.getMainHandItem();
-        if (!GougePhysics.isPickaxe(stack)) {
+        if (!Pickaxes.isPickaxe(stack)) {
             stack = local.getOffhandItem();
-            if (!GougePhysics.isPickaxe(stack)) {
+            if (!Pickaxes.isPickaxe(stack)) {
                 stop(local);
                 return;
             }
@@ -100,16 +103,16 @@ public final class GougeClientPhysics {
             }
         }
 
-        BlockHitResult hit = GougePhysics.raycast(local.level(), local);
+        BlockHitResult hit = WallRaycast.raycast(local.level(), local);
         boolean climbOk = GougeConfig.INSTANCE.climbing.enabled
-                && (!GougeConfig.INSTANCE.climbing.requires_dual || GougePhysics.isDualGripActive(local));
+                && (!GougeConfig.INSTANCE.climbing.requires_dual || Pickaxes.isDualGripActive(local));
         boolean shimmy = GougeConfig.INSTANCE.traverse.enabled
-                && (!GougeConfig.INSTANCE.traverse.requires_dual || GougePhysics.isDualGripActive(local))
+                && (!GougeConfig.INSTANCE.traverse.requires_dual || Pickaxes.isDualGripActive(local))
                 && mc.options.keyLeft.isDown() != mc.options.keyRight.isDown()
                 && !(climbOk && mc.options.keyJump.isDown());
         if (predicting && pin != null && pinDir != null && ((mc.options.keyJump.isDown() && climbOk) || shimmy)) {
-            BlockHitResult pinned = GougePhysics.pinnedHit(
-                    local.level(), GougePhysics.climbFocus(local.level(), pin, local.getY()), pinDir);
+            BlockHitResult pinned = WallGeometry.pinnedHit(
+                    local.level(), WallGeometry.climbFocus(local.level(), pin, local.getY()), pinDir);
             if (pinned != null) {
                 hit = pinned;
             }
@@ -130,8 +133,8 @@ public final class GougeClientPhysics {
                 stop(local);
                 return;
             }
-            if (predicting && GougePhysics.isHardBlock(state)) {
-                GougeConfig.Mechanics m = GougeConfig.INSTANCE.mechanics;
+            if (predicting && BlockRules.isHardBlock(state)) {
+                ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
                 double perSecond = mc.options.keyJump.isDown() && climbOk ? m.stamina_climb_cost
                         : shimmy ? m.stamina_shimmy_cost : m.stamina_hang_cost;
                 GougePlatform.get().spendStamina(local, perSecond / 2000.0);
@@ -143,19 +146,19 @@ public final class GougeClientPhysics {
         }
         float hardness = Math.max(0f, rawHardness);
 
-        if (GougePhysics.isHardBlock(state)) {
+        if (BlockRules.isHardBlock(state)) {
             start(local);
             local.setNoGravity(true);
-            if (Math.abs(v.y) < (hangLocked ? GougePhysics.hangHoldSpeed() : GougePhysics.HANG_LOCK_SPEED)) {
+            if (Math.abs(v.y) < (hangLocked ? GripMotion.hangHoldSpeed() : GripMotion.HANG_LOCK_SPEED)) {
                 hangLocked = true;
                 local.fallDistance = 0.0F;
                 var dir = hit.getDirection();
-                boolean canStand = GougePhysics.canStandOnLedge(local.level(), hit.getBlockPos(), state);
-                double ledgeTopY = GougePhysics.ledgeTopY(local.level(), hit.getBlockPos(), state);
+                boolean canStand = WallGeometry.canStandOnLedge(local.level(), hit.getBlockPos(), state);
+                double ledgeTopY = WallGeometry.ledgeTopY(local.level(), hit.getBlockPos(), state);
 
                 boolean isHoldingSpace = mc.options.keyJump.isDown();
                 boolean canClimb = GougeConfig.INSTANCE.climbing.enabled
-                        && (!GougeConfig.INSTANCE.climbing.requires_dual || GougePhysics.isDualGripActive(local));
+                        && (!GougeConfig.INSTANCE.climbing.requires_dual || Pickaxes.isDualGripActive(local));
 
                 if (pin == null && dir.getAxis().isHorizontal()) {
                     pin = hit.getBlockPos();
@@ -163,31 +166,31 @@ public final class GougeClientPhysics {
                 }
                 if (isHoldingSpace && canClimb && pin != null) {
                     Direction face = pinDir;
-                    pin = GougePhysics.trackWall(local.level(), pin, face, local.position(),
+                    pin = WallGeometry.trackWall(local.level(), pin, face, local.position(),
                             GougeConfig.INSTANCE.climbing.allow_diagonal
                                     && mc.options.keyLeft.isDown() != mc.options.keyRight.isDown());
-                    BlockPos ledge = GougePhysics.climbLedge(local.level(), pin, local.getY());
+                    BlockPos ledge = WallGeometry.climbLedge(local.level(), pin, local.getY());
                     BlockState ledgeState = ledge == null ? null : local.level().getBlockState(ledge);
                     if (ledge == null
-                            || GougePhysics.wallDistance(pin, face, local.position()) > GougeConfig.INSTANCE.climbing.reach
-                            || !GougePhysics.isHardBlock(ledgeState)) {
+                            || WallGeometry.wallDistance(pin, face, local.position()) > GougeConfig.INSTANCE.climbing.reach
+                            || !BlockRules.isHardBlock(ledgeState)) {
                         local.setDeltaMovement(Vec3.ZERO);
                         return;
                     }
-                    if (GougePhysics.canStandOnLedge(local.level(), ledge, ledgeState)
-                            && local.getY() >= GougePhysics.ledgeTopY(local.level(), ledge, ledgeState) - 0.45) {
-                        local.setDeltaMovement(GougePhysics.mantleVelocity(local, face, ledge));
+                    if (WallGeometry.canStandOnLedge(local.level(), ledge, ledgeState)
+                            && local.getY() >= WallGeometry.ledgeTopY(local.level(), ledge, ledgeState) - 0.45) {
+                        local.setDeltaMovement(WallGeometry.mantleVelocity(local, face, ledge));
                         stop(local);
-                        mantledUntil = local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS;
+                        mantledUntil = local.tickCount + GripState.MANTLE_REGRAB_TICKS;
                         return;
                     }
 
-                    if (GougePhysics.climbCapped(local.level(), ledge, local.position(), local.getY())) {
+                    if (WallGeometry.climbCapped(local.level(), ledge, local.position(), local.getY())) {
                         local.setDeltaMovement(Vec3.ZERO);
                         return;
                     }
 
-                    if (GougePhysics.softAhead(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed)) {
+                    if (WallGeometry.softAhead(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed)) {
                         local.setDeltaMovement(Vec3.ZERO);
                         tryLaunch(local, face, stack);
                         return;
@@ -222,8 +225,8 @@ public final class GougeClientPhysics {
                     Vec3 move = Vec3.ZERO;
                     if (shimmy && pin != null && pinDir != null) {
                         float intent = mc.options.keyLeft.isDown() ? 1.0F : -1.0F;
-                        Vec3 delta = GougePhysics.traverseDelta(local, pinDir, intent, stack);
-                        BlockPos next = GougePhysics.traverseCell(
+                        Vec3 delta = GripMotion.traverseDelta(local, pinDir, intent, stack);
+                        BlockPos next = WallGeometry.traverseCell(
                                 local.level(), pin, pinDir, local.position().add(delta.scale(4)), local.getY());
                         if (next != null && local.level().noCollision(local, local.getBoundingBox().move(delta))) {
                             pin = next;
@@ -238,10 +241,10 @@ public final class GougeClientPhysics {
             } else {
                 hangLocked = false;
                 double friction = Mth.clamp(
-                        GougePhysics.HARD_FRICTION_BASE - hardness * GougePhysics.HARD_FRICTION_SCALE,
-                        GougePhysics.HARD_MIN_FRICTION, GougePhysics.HARD_MAX_FRICTION);
+                        GripMotion.HARD_FRICTION_BASE - hardness * GripMotion.HARD_FRICTION_SCALE,
+                        GripMotion.HARD_MIN_FRICTION, GripMotion.HARD_MAX_FRICTION);
                 local.setDeltaMovement(new Vec3(
-                        v.x * GougePhysics.HORIZONTAL_DAMPING, v.y * friction, v.z * GougePhysics.HORIZONTAL_DAMPING));
+                        v.x * GripMotion.HORIZONTAL_DAMPING, v.y * friction, v.z * GripMotion.HORIZONTAL_DAMPING));
                 local.fallDistance = 0.0F;
             }
             return;
@@ -256,16 +259,16 @@ public final class GougeClientPhysics {
         start(local);
         local.setNoGravity(true);
         double slideSpeed = Mth.clamp(
-                GougePhysics.SOFT_SLIDE_MAX_SPEED - hardness * GougePhysics.SOFT_SLIDE_HARDNESS_SCALE,
-                GougePhysics.SOFT_SLIDE_MIN_SPEED, GougePhysics.SOFT_SLIDE_MAX_SPEED);
+                GripMotion.SOFT_SLIDE_MAX_SPEED - hardness * GripMotion.SOFT_SLIDE_HARDNESS_SCALE,
+                GripMotion.SOFT_SLIDE_MIN_SPEED, GripMotion.SOFT_SLIDE_MAX_SPEED);
         local.setDeltaMovement(new Vec3(
-                v.x * GougePhysics.HORIZONTAL_DAMPING, GougePhysics.softSlideVy(v.y, slideSpeed), v.z * GougePhysics.HORIZONTAL_DAMPING));
+                v.x * GripMotion.HORIZONTAL_DAMPING, GripMotion.softSlideVy(v.y, slideSpeed), v.z * GripMotion.HORIZONTAL_DAMPING));
     }
 
     private static void tryLaunch(LocalPlayer local, Direction face, ItemStack stack) {
-        GougeConfig.Launch l = GougeConfig.INSTANCE.launch;
+        ConfigData.Launch l = GougeConfig.INSTANCE.launch;
         BlockPos cap = l.enabled
-                ? GougePhysics.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+                ? WallGeometry.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
         if (cap == null) {
             launchCharge = 0;
             return;
@@ -273,11 +276,11 @@ public final class GougeClientPhysics {
         if (++launchCharge < (int) (l.charge_time * 20)) {
             return;
         }
-        local.setDeltaMovement(GougePhysics.launchVelocity(stack, GougePhysics.launchRise(local.level(), cap, local.getY())));
+        local.setDeltaMovement(GripMotion.launchVelocity(stack, WallGeometry.launchRise(local.level(), cap, local.getY())));
         local.fallDistance = 0.0F;
         stop(local);
-        mantledUntil = local.tickCount + GougePhysics.MANTLE_REGRAB_TICKS;
-        assistTicks = GougePhysics.LAUNCH_ASSIST_TICKS;
+        mantledUntil = local.tickCount + GripState.MANTLE_REGRAB_TICKS;
+        assistTicks = GripMotion.LAUNCH_ASSIST_TICKS;
         assistDir = face;
     }
 

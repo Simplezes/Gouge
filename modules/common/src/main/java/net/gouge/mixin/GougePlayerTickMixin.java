@@ -13,7 +13,7 @@ public abstract class GougePlayerTickMixin {
     private void gouge$clientTick(CallbackInfo ci) {
         Player self = (Player) (Object) this;
         if (self.level().isClientSide()) {
-            net.gouge.GougeClientPhysics.clientTick(self);
+            net.gouge.physics.GougeClientPhysics.clientTick(self);
         }
     }
 }
