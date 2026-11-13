@@ -1,6 +1,7 @@
 package net.gouge;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.world.item.ItemStack;
 
 import java.nio.file.Path;

@@ -4,6 +4,9 @@ import com.mojang.brigadier.Command;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.gouge.config.GougeConfig;
+import net.gouge.physics.GripState;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +28,7 @@ public class Gouge implements ModInitializer {
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             handler.player.setNoGravity(false);
-            GougePhysics.cleanup(handler.player.getUUID());
+            GripState.cleanup(handler.player.getUUID());
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
