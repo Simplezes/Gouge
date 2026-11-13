@@ -2,6 +2,9 @@ package net.gouge;
 
 import com.mojang.brigadier.Command;
 import com.mojang.logging.LogUtils;
+import net.gouge.config.GougeConfig;
+import net.gouge.physics.GripState;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,8 +12,8 @@ import net.minecraft.server.permissions.Permissions;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -46,7 +49,7 @@ public class Gouge {
     private void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.setNoGravity(false);
-            GougePhysics.cleanup(player.getUUID());
+            GripState.cleanup(player.getUUID());
         }
     }
 

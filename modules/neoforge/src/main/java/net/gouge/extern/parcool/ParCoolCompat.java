@@ -8,7 +8,8 @@ import com.alrex.parcool.common.action.impl.HorizontalWallRun;
 import com.alrex.parcool.common.action.impl.VerticalWallRun;
 import com.alrex.parcool.common.action.impl.WallJump;
 import com.alrex.parcool.common.action.impl.WallSlide;
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -39,7 +40,7 @@ public final class ParCoolCompat {
     private static final class Listener {
         @SubscribeEvent
         public void onTryToStart(ParCoolActionEvent.TryToStart event) {
-            if (isWallAction(event.getAction()) && GougePhysics.isActive(event.getPlayer().getUUID())) {
+            if (isWallAction(event.getAction()) && GripState.isActive(event.getPlayer().getUUID())) {
                 event.setCanceled(true);
             }
         }
