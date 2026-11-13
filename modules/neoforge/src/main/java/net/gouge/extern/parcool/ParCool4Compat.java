@@ -1,6 +1,7 @@
 package net.gouge.extern.parcool;
 
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripState;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.ICancellableEvent;
@@ -24,7 +25,7 @@ final class ParCool4Compat {
         Method getAction = Class.forName(EVENT).getMethod("getAction");
 
         listen("$TryToStart", getPlayer, getAction, (id, wall, e) -> {
-            if (wall && GougePhysics.isActive(id)) ((ICancellableEvent) e).setCanceled(true);
+            if (wall && GripState.isActive(id)) ((ICancellableEvent) e).setCanceled(true);
         });
         listen("$Start$Pre", getPlayer, getAction, (id, wall, e) -> {
             if (wall) active.add(id);
