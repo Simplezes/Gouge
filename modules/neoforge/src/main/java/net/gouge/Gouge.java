@@ -1,6 +1,11 @@
 package net.gouge;
 
 import com.mojang.brigadier.Command;
+import net.gouge.config.GougeConfig;
+import net.gouge.enchant.GougeEnchantment;
+import net.gouge.enchant.GougeEnchantments;
+import net.gouge.physics.GripState;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,15 +15,15 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 @Mod(Gouge.MOD_ID)
 public class Gouge {
@@ -61,7 +66,7 @@ public class Gouge {
     public void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.setNoGravity(false);
-            GougePhysics.cleanup(player.getUUID());
+            GripState.cleanup(player.getUUID());
         }
     }
 
