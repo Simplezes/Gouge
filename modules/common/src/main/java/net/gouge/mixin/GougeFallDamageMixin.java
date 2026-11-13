@@ -1,7 +1,8 @@
 package net.gouge.mixin;
 
-import net.gouge.GougeConfig;
-import net.gouge.GougePhysics;
+import net.gouge.config.GougeConfig;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripState;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,7 +18,7 @@ public abstract class GougeFallDamageMixin {
     @Inject(method = "calculateFallDamage", at = @At("RETURN"), cancellable = true)
     private void gouge$calculateFallDamage(float fallDistance, float damageMultiplier, CallbackInfoReturnable<Integer> cir) {
         if (!((Object) this instanceof ServerPlayer player)) return;
-        float multiplier = GougePhysics.fallDamageMultiplier(player.getUUID());
+        float multiplier = GripState.fallDamageMultiplier(player.getUUID());
         if (multiplier != 1.0f) {
             int damage = Math.round(cir.getReturnValue() * multiplier);
             double cap = GougeConfig.INSTANCE.mechanics.soft_fall_damage_cap;
@@ -31,7 +32,7 @@ public abstract class GougeFallDamageMixin {
     @Inject(method = "die", at = @At("HEAD"))
     private void gouge$die(DamageSource source, CallbackInfo ci) {
         if ((Object) this instanceof ServerPlayer player) {
-            GougePhysics.cleanup(player.getUUID());
+            GripState.cleanup(player.getUUID());
         }
     }
 }

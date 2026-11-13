@@ -1,4 +1,4 @@
-package net.gouge;
+package net.gouge.enchant;
 
 import net.minecraft.world.item.enchantment.Enchantment;
 

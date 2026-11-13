@@ -1,6 +1,6 @@
 package net.gouge.mixin;
 
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
 import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
