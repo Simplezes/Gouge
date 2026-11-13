@@ -1,5 +1,6 @@
 package net.gouge;
 
+import net.gouge.platform.GougePlatform;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.ToolActions;
 import net.minecraftforge.fml.loading.FMLPaths;
