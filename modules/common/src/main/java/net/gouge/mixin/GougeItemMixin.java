@@ -1,7 +1,11 @@
 package net.gouge.mixin;
 
-import net.gouge.GougeConfig;
-import net.gouge.GougePhysics;
+import net.gouge.config.GougeConfig;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripEffects;
+import net.gouge.physics.GripState;
+import net.gouge.physics.Pickaxes;
+import net.gouge.physics.WallRaycast;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -28,8 +32,8 @@ public abstract class GougeItemMixin {
     private void gouge$getUseDuration(LivingEntity user, CallbackInfoReturnable<Integer> cir) {
         ItemStack self = (ItemStack) (Object) this;
         if (user instanceof ServerPlayer player
-                && GougePhysics.isActive(player.getUUID())
-                && GougePhysics.isPickaxe(self)) {
+                && GripState.isActive(player.getUUID())
+                && Pickaxes.isPickaxe(self)) {
             cir.setReturnValue(GOUGE_MAX_USE_TICKS);
         }
     }
@@ -44,15 +48,15 @@ public abstract class GougeItemMixin {
         }
         if (world.isClientSide || !(world instanceof ServerLevel serverLevel)) return;
         if (!(user instanceof ServerPlayer player)) return;
-        if (!GougePhysics.isPickaxe(self)) return;
-        if (GougePhysics.isActive(player.getUUID())) return;
-        if (GougePhysics.hasMantled(player)) return;
+        if (!Pickaxes.isPickaxe(self)) return;
+        if (GripState.isActive(player.getUUID())) return;
+        if (GripState.hasMantled(player)) return;
         if (GougePhysics.grounded(player) || player.getDeltaMovement().y >= 0) return;
-        if (!GougePhysics.hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) return;
+        if (!WallRaycast.hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) return;
         if (player.isSpectator() || player.getAbilities().flying) return;
-        if (net.gouge.GougePlatform.get().blocksGouge(player.getUUID())) return;
+        if (net.gouge.platform.GougePlatform.get().blocksGouge(player.getUUID())) return;
 
-        BlockHitResult hit = GougePhysics.raycast(world, player);
+        BlockHitResult hit = WallRaycast.raycast(world, player);
         if (hit == null) return;
 
         var pos = hit.getBlockPos();
@@ -62,15 +66,15 @@ public abstract class GougeItemMixin {
 
         EquipmentSlot slot = hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
         double downwardSpeed = Math.abs(player.getDeltaMovement().y);
-        boolean survived = GougePhysics.applyImpactDamage(self, serverLevel, player, downwardSpeed, hardness, slot);
+        boolean survived = Pickaxes.applyImpactDamage(self, serverLevel, player, downwardSpeed, hardness, slot);
         if (!survived) {
             cir.setReturnValue(InteractionResultHolder.fail(self));
             return;
         }
 
-        GougePhysics.spawnImpact(serverLevel, hit, state, hardness);
-        GougePhysics.markActive(player.getUUID(), hand, self);
-        GougePhysics.setAnchor(player.getUUID(), player.position());
+        GripEffects.spawnImpact(serverLevel, hit, state, hardness);
+        GripState.markActive(player.getUUID(), hand, self);
+        GripState.setAnchor(player.getUUID(), player.position());
         player.startUsingItem(hand);
         cir.setReturnValue(InteractionResultHolder.consume(self));
     }
@@ -78,11 +82,11 @@ public abstract class GougeItemMixin {
     @Inject(method = "onUseTick", at = @At("HEAD"), cancellable = true)
     private void gouge$onUseTick(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
+        if (world.isClientSide || !Pickaxes.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
-        if (!GougePhysics.isActive(player.getUUID())) return;
+        if (!GripState.isActive(player.getUUID())) return;
         if (!GougePhysics.tick(player)) {
-            GougePhysics.clearActive(player.getUUID());
+            GripState.clearActive(player.getUUID());
             player.stopUsingItem();
         }
         ci.cancel();
@@ -91,9 +95,9 @@ public abstract class GougeItemMixin {
     @Inject(method = "releaseUsing", at = @At("HEAD"), cancellable = true)
     private void gouge$releaseUsing(Level world, LivingEntity user, int remainingUseTicks, CallbackInfo ci) {
         ItemStack self = (ItemStack) (Object) this;
-        if (world.isClientSide || !GougePhysics.isPickaxe(self)) return;
+        if (world.isClientSide || !Pickaxes.isPickaxe(self)) return;
         if (!(user instanceof ServerPlayer player)) return;
-        if (!GougePhysics.isActive(player.getUUID())) return;
+        if (!GripState.isActive(player.getUUID())) return;
         if (GougePhysics.handOverHand(player) == null) {
             GougePhysics.noteReleaseAtLedge(player);
             GougePhysics.stopSliding(player);
