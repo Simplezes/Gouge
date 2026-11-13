@@ -1,9 +1,10 @@
 package net.gouge.extern.parcool;
 
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripState;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.common.MinecraftForge;
 
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -23,7 +24,7 @@ final class ParCool4Compat {
         Method getAction = Class.forName(EVENT).getMethod("getAction");
 
         listen("$TryToStart", getPlayer, getAction, (id, wall, e) -> {
-            if (wall && GougePhysics.isActive(id)) e.setCanceled(true);
+            if (wall && GripState.isActive(id)) e.setCanceled(true);
         });
         listen("$Start$Pre", getPlayer, getAction, (id, wall, e) -> {
             if (wall) active.add(id);

@@ -9,7 +9,8 @@ import com.alrex.parcool.common.action.impl.VerticalWallRun;
 import com.alrex.parcool.common.action.impl.WallJump;
 import com.alrex.parcool.common.action.impl.WallSlide;
 import com.mojang.logging.LogUtils;
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
+import net.gouge.physics.GripState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -48,8 +49,8 @@ public final class ParCoolCompat {
     private static final class Listener {
         @SubscribeEvent
         public void onTryToStart(ParCoolActionEvent.TryToStartEvent event) {
-            if (isWallAction(event.getAction()) && (GougePhysics.isActive(event.getPlayer().getUUID())
-                    || event.getPlayer().level().isClientSide() && net.gouge.GougeClientPhysics.isGripping())) {
+            if (isWallAction(event.getAction()) && (GripState.isActive(event.getPlayer().getUUID())
+                    || event.getPlayer().level().isClientSide() && net.gouge.physics.GougeClientPhysics.isGripping())) {
                 event.setCanceled(true);
             }
         }

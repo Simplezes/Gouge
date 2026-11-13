@@ -1,6 +1,11 @@
 package net.gouge;
 
 import com.mojang.brigadier.Command;
+import net.gouge.config.GougeConfig;
+import net.gouge.enchant.GougeEnchantment;
+import net.gouge.enchant.GougeEnchantments;
+import net.gouge.physics.GripState;
+import net.gouge.platform.GougePlatform;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -59,7 +64,7 @@ public class Gouge {
     public void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.setNoGravity(false);
-            GougePhysics.cleanup(player.getUUID());
+            GripState.cleanup(player.getUUID());
         }
     }
 
