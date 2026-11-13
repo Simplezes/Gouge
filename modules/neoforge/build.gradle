@@ -42,9 +42,12 @@ neoForge {
 
 dependencies {
     compileOnly "maven.modrinth:parcool:9sTw2Dnd"
+    if (project.hasProperty("withParCool")) {
+        runtimeOnly "maven.modrinth:parcool:9sTw2Dnd"
+    }
     compileOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
     if (project.hasProperty("withCloth")) {
-        def patched = file("../dist/dev/cloth-config-neoforge-patched.jar")
+        def patched = file("../../.local/dist/dev/cloth-config-neoforge-patched.jar")
         if (patched.exists()) {
             runtimeOnly files(patched)
         } else {
