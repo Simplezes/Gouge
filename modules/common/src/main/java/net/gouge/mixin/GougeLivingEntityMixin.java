@@ -1,6 +1,6 @@
 package net.gouge.mixin;
 
-import net.gouge.GougePhysics;
+import net.gouge.physics.GougePhysics;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
