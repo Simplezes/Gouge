@@ -20,7 +20,7 @@ license="MIT"
 [[dependencies.gouge]]
     modId="minecraft"
     type="required"
-    versionRange="[26.1,26.3)"
+    versionRange="[26.1,26.4)"
     ordering="NONE"
     side="BOTH"
 

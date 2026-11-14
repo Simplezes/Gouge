@@ -70,7 +70,7 @@ public final class ClimbMoves {
                 && player.getY() >= ledgeTopY(world, ledge, ledgeState) - 0.45) {
             player.setDeltaMovement(mantleVelocity(player, dir, ledge));
             mantled.put(id, now);
-            player.hurtMarked = true;
+            player.syncVelocity = true;
             player.setNoGravity(false);
             gougeNoGravity.remove(id);
             release(player);
@@ -111,7 +111,7 @@ public final class ClimbMoves {
         Vec3 contact = player.position().add(0, 1.0, 0).subtract(dir.getStepX() * 0.4, 0, dir.getStepZ() * 0.4);
 
         player.setDeltaMovement(new Vec3(dx, dy, dz));
-        player.hurtMarked = true;
+        player.syncVelocity = true;
 
         if (dx != 0 || dz != 0) {
             Vec3 anchor = anchors.get(player.getUUID());
@@ -202,7 +202,7 @@ public final class ClimbMoves {
     static ClimbResult tryLaunch(ServerPlayer player, ServerLevel world, Direction dir, BlockPos pin, int now) {
         ConfigData.Launch l = GougeConfig.INSTANCE.launch;
         UUID id = player.getUUID();
-        BlockPos cap = l.enabled ? launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+        BlockPos cap = l.enabled ? launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed, springCapBonus(player.getUseItem())) : null;
         if (cap == null) {
             launchCharge.remove(id);
             return ClimbResult.BLOCKED;
@@ -223,7 +223,7 @@ public final class ClimbMoves {
         ItemStack stack = player.getUseItem();
         player.setDeltaMovement(launchVelocity(stack, launchRise(world, cap, player.getY())));
         player.fallDistance = 0.0F;
-        player.hurtMarked = true;
+        player.syncVelocity = true;
         mantled.put(id, now);
         launchAssist.put(id, new int[]{LAUNCH_ASSIST_TICKS, dir.get3DDataValue()});
         player.setNoGravity(false);
@@ -264,7 +264,7 @@ public final class ClimbMoves {
         double kickH = GougeConfig.INSTANCE.wall_jump.forward_boost * spring;
         double kickV = GougeConfig.INSTANCE.wall_jump.upward_boost * spring;
         player.setDeltaMovement(normal.scale(kickH).add(0, kickV, 0));
-        player.hurtMarked = true;
+        player.syncVelocity = true;
 
         sound(world, hit.getBlockPos(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0f, 1.2f);
         puff(world, ParticleTypes.CRIT, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z,

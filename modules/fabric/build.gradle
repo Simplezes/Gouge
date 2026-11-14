@@ -24,8 +24,8 @@ dependencies {
     include "com.electronwill.night-config:toml:3.8.1"
     include "com.electronwill.night-config:core:3.8.1"
 
-    compileOnly "maven.modrinth:cloth-config:26.2.155+fabric"
-    compileOnly "maven.modrinth:modmenu:20.0.3"
+    compileOnly "maven.modrinth:cloth-config:26.3.159+fabric"
+    compileOnly "maven.modrinth:modmenu:21.0.1"
 
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"

@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'net.neoforged.moddev' version '2.0.146'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 version = mod_version
@@ -45,13 +45,13 @@ dependencies {
     if (project.hasProperty("withParCool")) {
         runtimeOnly "maven.modrinth:parcool:9sTw2Dnd"
     }
-    compileOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
+    compileOnly "maven.modrinth:cloth-config:26.3.159+neoforge"
     if (project.hasProperty("withCloth")) {
         def patched = file("../../.local/dist/dev/cloth-config-neoforge-patched.jar")
         if (patched.exists()) {
             runtimeOnly files(patched)
         } else {
-            runtimeOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
+            runtimeOnly "maven.modrinth:cloth-config:26.3.159+neoforge"
         }
     }
     compileOnly "com.electronwill.night-config:toml:3.8.1"

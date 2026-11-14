@@ -137,7 +137,7 @@ public final class GougePhysics {
                 if (push != null) {
                     Vec3 v = player.getDeltaMovement();
                     player.setDeltaMovement(push.x, v.y, push.z);
-                    player.hurtMarked = true;
+                    player.syncVelocity = true;
                 }
             }
         }
@@ -374,7 +374,7 @@ public final class GougePhysics {
                 }
                 Vec3 shimmyMove = shimmy ? traverseStep(player, world, d, hit, state, hardness, now) : Vec3.ZERO;
                 player.setDeltaMovement(shimmyMove);
-                player.hurtMarked = true;
+                player.syncVelocity = true;
 
                 if (now % 20 == 0 && !drain(player)) {
                     release(player);
@@ -396,7 +396,7 @@ public final class GougePhysics {
             slideVy.put(uid, slideSpeedY);
             player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, slideSpeedY, v.z * HORIZONTAL_DAMPING));
             player.fallDistance = 0.0F;
-            player.hurtMarked = true;
+            player.syncVelocity = true;
             updateClimbFx(player, world, hit, pos, state, hardness, now);
             return true;
         }
@@ -430,7 +430,7 @@ public final class GougePhysics {
         double softVy = softSlideVy(slide != null ? slide : Math.min(realVy, 0), slideSpeed);
         slideVy.put(uid, softVy);
         player.setDeltaMovement(new Vec3(v.x * HORIZONTAL_DAMPING, softVy, v.z * HORIZONTAL_DAMPING));
-        player.hurtMarked = true;
+        player.syncVelocity = true;
 
         updateClimbFx(player, world, hit, pos, state, hardness, now);
         return true;
