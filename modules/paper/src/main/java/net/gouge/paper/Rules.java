@@ -70,6 +70,10 @@ final class Rules {
         return t != null && t.isTagged(m);
     }
 
+    int springCapBonus(ItemStack tool) {
+        return enchLevel(tool, "spring") * plugin.getConfig().getInt("enchantments.spring_cap_bonus");
+    }
+
     double spring(ItemStack tool) {
         return 1.0 + enchLevel(tool, "spring") * plugin.getConfig().getDouble("enchantments.spring_bonus");
     }

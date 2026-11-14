@@ -117,6 +117,8 @@ wall_jump:
 enchantments:
   # Extra launch and wall-kick power per Spring level (0.15 = +15%).
   spring_bonus: 0.15
+  # Extra soft-cap blocks you can launch over per Spring level, on top of launch.max_cap_height.
+  spring_cap_bonus: 1
   # Extra shimmy speed per Shimmy level (0.5 = +50%).
   traverse_bonus: 0.5
   # Extra seconds of hang time per Grip level.

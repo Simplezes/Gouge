@@ -268,7 +268,7 @@ public final class GougeClientPhysics {
     private static void tryLaunch(LocalPlayer local, Direction face, ItemStack stack) {
         ConfigData.Launch l = GougeConfig.INSTANCE.launch;
         BlockPos cap = l.enabled
-                ? WallGeometry.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+                ? WallGeometry.launchCap(local.level(), pin, local.getY(), GougeConfig.INSTANCE.climbing.speed, Pickaxes.springCapBonus(stack)) : null;
         if (cap == null) {
             launchCharge = 0;
             return;

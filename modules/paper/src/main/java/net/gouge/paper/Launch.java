@@ -29,7 +29,7 @@ final class Launch {
         World w = p.getWorld();
         Location loc = p.getLocation();
         Block hands = w.getBlockAt(s.pin.getX(), (int) Math.floor(loc.getY() + cfg.getDouble("climbing.speed") + 1.0), s.pin.getZ());
-        Block cap = cfg.getBoolean("launch.enabled") && solid(hands) && !plugin.rules.isHard(hands) ? capTop(hands) : null;
+        Block cap = cfg.getBoolean("launch.enabled") && solid(hands) && !plugin.rules.isHard(hands) ? capTop(hands, tool) : null;
         if (cap == null) {
             s.launchCharge = 0;
             return false;
@@ -41,11 +41,11 @@ final class Launch {
         }
         s.launchCharge = 0;
         p.setFallDistance(0f);
-        double base = cfg.getDouble("launch.upward_boost");
+        double base = cfg.getDouble("launch.upward_boost") * plugin.rules.spring(tool);
         if (cfg.getBoolean("launch.auto_height")) {
             base = boostFor(ledgeTop(cap) - loc.getY() + 0.4) + 0.02;
         }
-        p.setVelocity(new Vector(0, base * plugin.rules.spring(tool), 0));
+        p.setVelocity(new Vector(0, base, 0));
         plugin.mantled.put(p.getUniqueId(), plugin.now);
         plugin.assistLeft.put(p.getUniqueId(), ASSIST_TICKS);
         plugin.assistFace.put(p.getUniqueId(), s.pinFace);
@@ -57,8 +57,8 @@ final class Launch {
         return true;
     }
 
-    Block capTop(Block hands) {
-        int max = plugin.getConfig().getInt("launch.max_cap_height");
+    Block capTop(Block hands, ItemStack tool) {
+        int max = plugin.getConfig().getInt("launch.max_cap_height") + plugin.rules.springCapBonus(tool);
         for (int i = 0; i < max; i++) {
             Block c = hands.getRelative(BlockFace.UP, i);
             if (!solid(c)) return null;
