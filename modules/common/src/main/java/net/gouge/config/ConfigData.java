@@ -95,6 +95,7 @@ public class ConfigData {
     public static class Enchantments {
 
         public double spring_bonus = 0.15;
+        public int spring_cap_bonus = 1;
         public double traverse_bonus = 0.5;
         public double grip_bonus = 2.0;
         public double momentum_reduction = 1.0;

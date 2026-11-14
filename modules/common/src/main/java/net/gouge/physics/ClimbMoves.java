@@ -201,7 +201,7 @@ public final class ClimbMoves {
     static ClimbResult tryLaunch(ServerPlayer player, ServerLevel world, Direction dir, BlockPos pin, int now) {
         ConfigData.Launch l = GougeConfig.INSTANCE.launch;
         UUID id = player.getUUID();
-        BlockPos cap = l.enabled ? launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed) : null;
+        BlockPos cap = l.enabled ? launchCap(world, pin, player.getY(), GougeConfig.INSTANCE.climbing.speed, springCapBonus(player.getUseItem())) : null;
         if (cap == null) {
             launchCharge.remove(id);
             return ClimbResult.BLOCKED;
