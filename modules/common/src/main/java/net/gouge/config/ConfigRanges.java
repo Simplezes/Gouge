@@ -38,6 +38,7 @@ public final class ConfigRanges {
         RANGES.put("wall_jump.forward_boost", new double[]{0, 5});
         RANGES.put("wall_jump.upward_boost", new double[]{0, 5});
         RANGES.put("enchantments.spring_bonus", new double[]{0, 2});
+        RANGES.put("enchantments.spring_cap_bonus", new double[]{0, 4});
         RANGES.put("enchantments.traverse_bonus", new double[]{0, 5});
         RANGES.put("enchantments.grip_bonus", new double[]{0, 60});
         RANGES.put("enchantments.momentum_reduction", new double[]{0, 60});

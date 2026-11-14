@@ -48,6 +48,10 @@ public final class Pickaxes {
         return enchLevel(stack, GougeEnchantments.SPRING);
     }
 
+    public static int springCapBonus(ItemStack stack) {
+        return springLevel(stack) * GougeConfig.INSTANCE.enchantments.spring_cap_bonus;
+    }
+
     static double springScale(ItemStack stack) {
         return 1.0 + springLevel(stack) * GougeConfig.INSTANCE.enchantments.spring_bonus;
     }

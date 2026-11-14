@@ -52,8 +52,8 @@ public final class GripMotion {
 
     public static Vec3 launchVelocity(ItemStack stack, double neededRise) {
         ConfigData.Launch l = GougeConfig.INSTANCE.launch;
-        double base = l.auto_height ? boostFor(neededRise) + 0.02 : l.upward_boost;
-        return new Vec3(0, base * springScale(stack), 0);
+        double base = l.auto_height ? boostFor(neededRise) + 0.02 : l.upward_boost * springScale(stack);
+        return new Vec3(0, base, 0);
     }
 
     public static Vec3 assistPush(Level world, Player player, Direction face) {
