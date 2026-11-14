@@ -219,6 +219,11 @@ public final class ConfigWriter {
         c.setComment("enchantments.spring_bonus", """
                  Extra launch and wall-kick power per level of the Spring enchantment.
                  0.15 means +15% per level. Range: 0 - 2""");
+        c.set("enchantments.spring_cap_bonus", d.enchantments.spring_cap_bonus);
+        c.setComment("enchantments.spring_cap_bonus", """
+                 Extra blocks of soft cap you can launch over per level of the Spring enchantment,
+                 on top of launch.max_cap_height. 1 means Spring III clears 3 more blocks.
+                 Range: 0 - 4""");
         c.set("enchantments.traverse_bonus", d.enchantments.traverse_bonus);
         c.setComment("enchantments.traverse_bonus", """
                  Extra shimmy speed per level of the Shimmy enchantment.

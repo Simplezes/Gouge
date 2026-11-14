@@ -77,6 +77,7 @@ public final class ConfigReader {
         d.effects.volume = num(c, "effects.volume", d.effects.volume);
 
         d.enchantments.spring_bonus = num(c, "enchantments.spring_bonus", d.enchantments.spring_bonus);
+        d.enchantments.spring_cap_bonus = inum(c, "enchantments.spring_cap_bonus", d.enchantments.spring_cap_bonus);
         d.enchantments.traverse_bonus = num(c, "enchantments.traverse_bonus", d.enchantments.traverse_bonus);
         d.enchantments.grip_bonus = num(c, "enchantments.grip_bonus", d.enchantments.grip_bonus);
         d.enchantments.momentum_reduction = num(c, "enchantments.momentum_reduction", d.enchantments.momentum_reduction);

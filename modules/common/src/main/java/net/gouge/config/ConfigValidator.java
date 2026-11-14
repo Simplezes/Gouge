@@ -79,6 +79,7 @@ public final class ConfigValidator {
         c.launch.upward_boost = clamp("launch.upward_boost", c.launch.upward_boost, 0.1, 2.0);
         c.launch.max_cap_height = (int) clamp("launch.max_cap_height", c.launch.max_cap_height, 1, 4);
         c.enchantments.spring_bonus = clamp("enchantments.spring_bonus", c.enchantments.spring_bonus, 0.0, 2.0);
+        c.enchantments.spring_cap_bonus = (int) clamp("enchantments.spring_cap_bonus", c.enchantments.spring_cap_bonus, 0, 4);
         c.enchantments.traverse_bonus = clamp("enchantments.traverse_bonus", c.enchantments.traverse_bonus, 0.0, 5.0);
         c.block_grip.replaceAll((k, v) -> clamp("block_grip." + k, v, 0.0, 10.0));
         c.enchantments.grip_bonus = clamp("enchantments.grip_bonus", c.enchantments.grip_bonus, 0.0, 60.0);

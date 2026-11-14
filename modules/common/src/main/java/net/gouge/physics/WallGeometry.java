@@ -135,8 +135,12 @@ public final class WallGeometry {
     }
 
     public static BlockPos launchCap(Level world, BlockPos pin, double feetY, double step) {
+        return launchCap(world, pin, feetY, step, 0);
+    }
+
+    public static BlockPos launchCap(Level world, BlockPos pin, double feetY, double step, int extraHeight) {
         BlockPos hands = handsCell(pin, feetY, step);
-        for (int i = 0; i < GougeConfig.INSTANCE.launch.max_cap_height; i++) {
+        for (int i = 0; i < GougeConfig.INSTANCE.launch.max_cap_height + extraHeight; i++) {
             BlockPos cell = hands.above(i);
             BlockState st = world.getBlockState(cell);
             if (st.getCollisionShape(world, cell).isEmpty()) {
