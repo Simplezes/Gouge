@@ -45,6 +45,10 @@ dependencies {
     if (project.hasProperty("withParCool")) {
         runtimeOnly "maven.modrinth:parcool:9sTw2Dnd"
     }
+    compileOnly "maven.modrinth:paragliders:FTwrXq5l"
+    if (project.hasProperty("withParaglider")) {
+        runtimeOnly "maven.modrinth:paragliders:FTwrXq5l"
+    }
     compileOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
     if (project.hasProperty("withCloth")) {
         def patched = file("../../.local/dist/dev/cloth-config-neoforge-patched.jar")
