@@ -9,6 +9,7 @@
   "environment": "*",
   "entrypoints": {
     "main": ["net.gouge.Gouge"],
+    "paraglider-plugin": ["net.gouge.extern.paraglider.GougeParagliderPlugin"],
     "modmenu": ["net.gouge.GougeModMenu"]
   },
   "mixins": ["gouge.mixins.json"],

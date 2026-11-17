@@ -47,6 +47,10 @@ reobf {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    compileOnly fg.deobf("maven.modrinth:paragliders:nudKlXXT")
+    if (project.hasProperty("withParaglider")) {
+        runtimeOnly fg.deobf("maven.modrinth:paragliders:nudKlXXT")
+    }
     compileOnly "maven.modrinth:parcool:H0pXfFO6"
     runtimeOnly fg.deobf("maven.modrinth:parcool:H0pXfFO6")
     compileOnly "com.electronwill.night-config:toml:3.6.4"

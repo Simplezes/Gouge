@@ -27,6 +27,11 @@ dependencies {
 
     modCompileOnly "maven.modrinth:cloth-config:11.1.136+fabric"
     modCompileOnly "maven.modrinth:modmenu:7.2.2"
+    modCompileOnly "maven.modrinth:paragliders:6qmc3Nyl"
+    if (project.hasProperty("withParaglider")) {
+        modLocalRuntime "maven.modrinth:paragliders:6qmc3Nyl"
+        modLocalRuntime "maven.modrinth:forge-config-api-port:HvR3IdRE"
+    }
 
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
