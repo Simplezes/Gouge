@@ -31,6 +31,10 @@ runs {
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     compileOnly "maven.modrinth:parcool:Iabk9mRT"
+    compileOnly "maven.modrinth:paragliders:tkTruHIA"
+    if (project.hasProperty("withParaglider")) {
+        runtimeOnly "maven.modrinth:paragliders:tkTruHIA"
+    }
     compileOnly "maven.modrinth:cloth-config:15.0.140+neoforge"
     if (project.hasProperty("withCloth")) {
         runtimeOnly "maven.modrinth:cloth-config:15.0.140+neoforge"
