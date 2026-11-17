@@ -38,6 +38,15 @@ public final class GougePhysics {
         return player.getLastClientInput().jump() || player.isJumping();
     }
 
+    public static int gripMode(ServerPlayer player) {
+        boolean climb = GougeConfig.INSTANCE.climbing.enabled
+                && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
+        if (climb && isJumpHeld(player)) {
+            return 1;
+        }
+        return traverseAllowed(player) && strafeIntent(player) != 0 ? 2 : 0;
+    }
+
     public static float strafeIntent(ServerPlayer player) {
         var in = player.getLastClientInput();
         return in.left() == in.right() ? 0.0F : (in.left() ? 1.0F : -1.0F);

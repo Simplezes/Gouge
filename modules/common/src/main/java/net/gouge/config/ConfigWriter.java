@@ -79,7 +79,7 @@ public final class ConfigWriter {
                  Set to 0 to disable. Range: 0 - 600""");
         c.set("mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
         c.setComment("mechanics.use_mod_stamina", """
-                 When a stamina mod (ParCool) is installed, gripping, climbing and shimmying
+                 When a stamina mod (Paraglider or ParCool) is installed, gripping, climbing and shimmying
                  spend its stamina instead of using the hang_time grip timer. You slip when it
                  runs out. Has no effect without such a mod. Set to false to always use hang_time.""");
         c.set("mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);

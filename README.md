@@ -117,6 +117,7 @@ Tested and confirmed to work seamlessly alongside:
 * **Mekanism / Mekanism Tools**
 * **Silent Gear**
 * **ParCool** *(Credit: Brizo)* – 3.x and 4.x (4.x on MC 1.21.1 / 1.20.1)
+* **Paraglider** – gripping, climbing and shimmying drain its stamina wheel
 * **Zipline: Rezipped** *(Credit: greetedsnow)*
 * **Wall-Jump TXF** *(credit: ANormalRaft)*
 
