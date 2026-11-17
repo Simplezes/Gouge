@@ -12,6 +12,7 @@ import java.util.UUID;
 public final class NeoForgePlatform implements GougePlatform {
 
     private final boolean parcool = ModList.get().isLoaded("parcool");
+    private final boolean paraglider = ModList.get().isLoaded("paraglider");
 
     @Override
     public Path configDir() {
@@ -25,17 +26,20 @@ public final class NeoForgePlatform implements GougePlatform {
 
     @Override
     public boolean hasModStamina() {
-        return parcool && net.gouge.extern.parcool.ParCoolStamina.available();
+        return paraglider || parcool && net.gouge.extern.parcool.ParCoolStamina.available();
     }
 
     @Override
     public boolean staminaExhausted(Player player) {
+        if (paraglider) {
+            return net.gouge.extern.paraglider.ParagliderStamina.exhausted(player);
+        }
         return parcool && net.gouge.extern.parcool.ParCoolStamina.exhausted(player);
     }
 
     @Override
     public void spendStamina(Player player, double fractionOfMax) {
-        if (parcool) {
+        if (parcool && !paraglider) {
             net.gouge.extern.parcool.ParCoolStamina.spend(player, fractionOfMax);
         }
     }

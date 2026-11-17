@@ -31,6 +31,10 @@ runs {
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     compileOnly "maven.modrinth:parcool:wwqfMVm1"
+    compileOnly "maven.modrinth:paragliders:L6hTL3QG"
+    if (project.hasProperty("withParaglider")) {
+        runtimeOnly "maven.modrinth:paragliders:L6hTL3QG"
+    }
     compileOnly "maven.modrinth:cloth-config:21.11.153+neoforge"
     if (project.hasProperty("withCloth")) {
         runtimeOnly "maven.modrinth:cloth-config:21.11.153+neoforge"
