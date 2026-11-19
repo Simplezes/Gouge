@@ -168,7 +168,7 @@ public final class ClimbMoves {
             return Vec3.ZERO;
         }
         Vec3 delta = traverseDelta(player, saved.face(), strafeIntent(player), player.getUseItem());
-        BlockPos next = traverseCell(world, saved.pos(), saved.face(), player.position().add(delta.scale(4)), player.getY());
+        BlockPos next = traverseCell(world, saved.pos(), saved.face(), player.position(), player.position().add(delta), player.getY());
         if (next == null || !world.noCollision(player, player.getBoundingBox().move(delta))) {
             return Vec3.ZERO;
         }
