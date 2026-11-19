@@ -42,8 +42,6 @@ public final class ConfigReader {
         d.mechanics.release_cooldown = num(c, "mechanics.release_cooldown", d.mechanics.release_cooldown);
         d.mechanics.use_mod_stamina = bool(c, "mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
         d.mechanics.stamina_hang_cost = num(c, "mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
-        d.mechanics.stamina_climb_cost = num(c, "mechanics.stamina_climb_cost", d.mechanics.stamina_climb_cost);
-        d.mechanics.stamina_shimmy_cost = num(c, "mechanics.stamina_shimmy_cost", d.mechanics.stamina_shimmy_cost);
         d.mechanics.block_other_hand = bool(c, "mechanics.block_other_hand", d.mechanics.block_other_hand);
         d.mechanics.soft_slide_ramp = num(c, "mechanics.soft_slide_ramp", d.mechanics.soft_slide_ramp);
 

@@ -84,15 +84,7 @@ public final class ConfigWriter {
                  runs out. Has no effect without such a mod. Set to false to always use hang_time.""");
         c.set("mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
         c.setComment("mechanics.stamina_hang_cost", """
-                 Stamina spent per second while hanging, as a percent of the stamina bar.
-                 Only used with use_mod_stamina. Range: 0 - 100""");
-        c.set("mechanics.stamina_climb_cost", d.mechanics.stamina_climb_cost);
-        c.setComment("mechanics.stamina_climb_cost", """
-                 Stamina spent per second while climbing, as a percent of the stamina bar.
-                 Only used with use_mod_stamina. Range: 0 - 100""");
-        c.set("mechanics.stamina_shimmy_cost", d.mechanics.stamina_shimmy_cost);
-        c.setComment("mechanics.stamina_shimmy_cost", """
-                 Stamina spent per second while shimmying sideways, as a percent of the stamina bar.
+                 Stamina spent per second while gripping, climbing or shimmying, as a percent of the stamina bar.
                  Only used with use_mod_stamina. Range: 0 - 100""");
         c.set("mechanics.block_other_hand", d.mechanics.block_other_hand);
         c.setComment("mechanics.block_other_hand", """
