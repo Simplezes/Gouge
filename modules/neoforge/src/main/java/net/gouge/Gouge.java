@@ -17,6 +17,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 @Mod(Gouge.MOD_ID)
 public class Gouge {
@@ -25,6 +26,7 @@ public class Gouge {
     public Gouge(IEventBus modEventBus, ModContainer container) {
         GougePlatform.set(new NeoForgePlatform());
         GougeConfig.load();
+        modEventBus.addListener(this::onRegisterPayloads);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onPlayerDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
@@ -38,6 +40,12 @@ public class Gouge {
                 LogUtils.getLogger().warn("[Gouge] Incompatible ParCool version, disabling ParCool compat: {}", e.toString());
             }
         }
+    }
+
+    private void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
+        event.registrar("1").optional().playToClient(StaminaPayload.TYPE, StaminaPayload.CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> net.gouge.physics.GougeClientPhysics.syncStamina(payload.level())));
     }
 
     private void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
