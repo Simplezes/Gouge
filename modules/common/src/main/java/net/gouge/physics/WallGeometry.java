@@ -160,11 +160,17 @@ public final class WallGeometry {
         return ledgeTopY(world, cap, world.getBlockState(cap)) - feetY + 0.4;
     }
 
-    public static BlockPos traverseCell(Level world, BlockPos pin, Direction face, Vec3 dest, double feetY) {
+    public static BlockPos traverseCell(Level world, BlockPos pin, Direction face, Vec3 from, Vec3 dest, double feetY) {
         BlockPos column = tangentCell(pin, face, dest);
         BlockPos body = new BlockPos(column.getX(), Mth.floor(feetY + 1.0), column.getZ());
         BlockState st = world.getBlockState(body);
-        return !st.getCollisionShape(world, body).isEmpty() && isHardBlock(st) && st.getDestroySpeed(world, body) >= 0
-                ? body : null;
+        if (!st.getCollisionShape(world, body).isEmpty() && isHardBlock(st) && st.getDestroySpeed(world, body) >= 0) {
+            return body;
+        }
+        boolean x = face.getAxis() == Direction.Axis.X;
+        double center = x ? pin.getZ() + 0.5 : pin.getX() + 0.5;
+        double a = Math.abs((x ? from.z : from.x) - center);
+        double b = Math.abs((x ? dest.z : dest.x) - center);
+        return b < a ? pin : null;
     }
 }
