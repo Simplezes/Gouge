@@ -380,6 +380,7 @@ public final class GougePhysics {
                     release(player);
                     return false;
                 }
+                cling(world, player, d, now);
 
                 boolean canClimb = GougeConfig.INSTANCE.climbing.enabled
                         && (!GougeConfig.INSTANCE.climbing.requires_dual || isDualGripActive(player));
@@ -405,9 +406,6 @@ public final class GougePhysics {
                 if (now % 20 == 0 && !drain(player)) {
                     release(player);
                     return false;
-                }
-                if (now % 20 == 10) {
-                    sound(world, pos, SoundEvents.CHAIN_STEP, 0.4f, 0.8f + world.getRandom().nextFloat() * 0.2f);
                 }
                 return true;
             }
