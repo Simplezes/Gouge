@@ -239,7 +239,7 @@ public final class GougeClientPhysics {
                         float intent = mc.options.keyLeft.isDown() ? 1.0F : -1.0F;
                         Vec3 delta = GripMotion.traverseDelta(local, pinDir, intent, stack);
                         BlockPos next = WallGeometry.traverseCell(
-                                local.level(), pin, pinDir, local.position().add(delta.scale(4)), local.getY());
+                                local.level(), pin, pinDir, local.position(), local.position().add(delta), local.getY());
                         if (next != null && local.level().noCollision(local, local.getBoundingBox().move(delta))) {
                             pin = next;
                             if (anchor != null) {
