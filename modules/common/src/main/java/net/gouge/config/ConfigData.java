@@ -42,8 +42,6 @@ public class ConfigData {
         public double release_cooldown = 0.5;
         public boolean use_mod_stamina = true;
         public double stamina_hang_cost = 12.0;
-        public double stamina_climb_cost = 20.0;
-        public double stamina_shimmy_cost = 20.0;
         public boolean block_other_hand = true;
         public double soft_slide_ramp = 0.05;
     }
