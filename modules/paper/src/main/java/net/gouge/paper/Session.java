@@ -7,7 +7,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.util.Vector;
 
 final class Session {
-    int lockRefresh, lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100, launchCharge;
+    int lockRefresh, lastUse, hangEnd = -1, grabTick = -1, baseHang, sneakOff = -1, softAt = -100, launchCharge, clingAt = -1;
     boolean dual, wasSneaking, noGrav;
     Material toolType, lockedType;
     Block pin;

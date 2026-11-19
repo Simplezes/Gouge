@@ -57,6 +57,7 @@ public final class GripState {
         mantled.remove(id);
         hangData.remove(id);
         trails.remove(id);
+        clingAt.remove(id);
         anchors.remove(id);
         climbPins.remove(id);
         lastY.remove(id);
