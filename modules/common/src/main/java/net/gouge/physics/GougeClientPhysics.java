@@ -148,8 +148,7 @@ public final class GougeClientPhysics {
             }
             if (predicting && BlockRules.isHardBlock(state)) {
                 ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-                double perSecond = mc.options.keyJump.isDown() && climbOk ? m.stamina_climb_cost
-                        : shimmy ? m.stamina_shimmy_cost : m.stamina_hang_cost;
+                double perSecond = m.stamina_hang_cost;
                 pendingStamina += perSecond / 2000.0;
             }
         }
