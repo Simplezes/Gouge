@@ -5,12 +5,15 @@ import net.gouge.config.GougeConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -45,17 +48,58 @@ public final class GripEffects {
         player.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, stage));
     }
 
+    static boolean isMetal(BlockState state) {
+        SoundType t = state.getSoundType();
+        return t == SoundType.METAL || t == SoundType.COPPER || t == SoundType.NETHERITE_BLOCK || t == SoundType.ANVIL;
+    }
+
+    static boolean isDusty(BlockState state) {
+        SoundType t = state.getSoundType();
+        return t == SoundType.SAND || t == SoundType.GRAVEL || t == SoundType.SNOW;
+    }
+
+    static ParticleOptions sparks(BlockState state) {
+        return isMetal(state) ? ParticleTypes.ELECTRIC_SPARK : ParticleTypes.CRIT;
+    }
+
+    static void warnLowDurability(ServerLevel world, ServerPlayer player, int now) {
+        ItemStack stack = player.getUseItem();
+        int max = stack.getMaxDamage();
+        if (now % 20 != 0 || max <= 0 || max - stack.getDamageValue() > Math.max(8, max / 10)) {
+            return;
+        }
+        sound(world, player.blockPosition(), SoundEvents.ITEM_BREAK.value(), 0.5f, 1.6f);
+    }
+
+    static final Map<UUID, Integer> clingAt = new ConcurrentHashMap<>();
+
+    static void cling(ServerLevel world, ServerPlayer player, int[] d, int now) {
+        boolean timed = !GougePhysics.modStamina() && !GougeConfig.INSTANCE.mechanics.unlimited_grip;
+        float left = timed ? (float) (d[0] - now) / Math.max(1, d[0] - d[5]) : 1f;
+        float urgency = left >= 0.5f ? 0f : 1f - left / 0.5f;
+        int last = Math.max(clingAt.getOrDefault(player.getUUID(), d[5]), d[5]);
+        if (now - last < Math.round(20 - 10 * urgency)) {
+            return;
+        }
+        clingAt.put(player.getUUID(), now);
+        sound(world, player.blockPosition(), SoundEvents.CHAIN_STEP, 0.4f + 0.2f * urgency,
+                0.8f + 0.5f * urgency + world.getRandom().nextFloat() * 0.2f);
+    }
+
     public static void spawnImpact(ServerLevel world, BlockHitResult hit, BlockState state, float hardness) {
         Vec3 p = hit.getLocation();
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
         if (isHardBlock(state)) {
             sound(world, pos, sounds.getBreakSound(), 2.0f, 0.5f);
-            puff(world, ParticleTypes.CRIT, p.x, p.y, p.z, 20, 0.2, 0.2, 0.2, 0.15);
+            puff(world, sparks(state), p.x, p.y, p.z, 20, 0.2, 0.2, 0.2, 0.15);
         } else {
             sound(world, pos, sounds.getBreakSound(), 1.5f, 0.6f);
             puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
                     p.x, p.y, p.z, 25, 0.3, 0.3, 0.3, 0.0);
+            if (isDusty(state)) {
+                puff(world, ParticleTypes.POOF, p.x, p.y, p.z, 8, 0.3, 0.3, 0.3, 0.02);
+            }
         }
     }
 
@@ -81,6 +125,7 @@ public final class GripEffects {
 
     static void updateClimbFx(ServerPlayer player, ServerLevel world, BlockHitResult hit,
             BlockPos pos, BlockState state, float hardness, int now) {
+        warnLowDurability(world, player, now);
         int trailLength = GougeConfig.INSTANCE.mechanics.trail_length;
         if (trailLength <= 0) {
             if (now % 5 == 0) {
@@ -120,8 +165,9 @@ public final class GripEffects {
         BlockPos pos = hit.getBlockPos();
         var sounds = state.getSoundType();
         if (isHardBlock(state)) {
-            sound(world, pos, sounds.getHitSound(), 0.6f, 0.6f + world.getRandom().nextFloat() * 0.2f);
-            puff(world, ParticleTypes.CRIT, p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.05);
+            sound(world, pos, sounds.getHitSound(),
+                    0.6f, (isMetal(state) ? 1.1f : 0.6f) + world.getRandom().nextFloat() * 0.2f);
+            puff(world, sparks(state), p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.05);
             double ox = hit.getDirection().getStepX() * 0.15;
             double oz = hit.getDirection().getStepZ() * 0.15;
             puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
@@ -130,6 +176,9 @@ public final class GripEffects {
             sound(world, pos, sounds.getHitSound(), 0.5f, 1.0f);
             puff(world, new BlockParticleOption(ParticleTypes.BLOCK, state),
                     p.x, p.y, p.z, 6, 0.15, 0.15, 0.15, 0.0);
+            if (isDusty(state)) {
+                puff(world, ParticleTypes.POOF, p.x, p.y, p.z, 2, 0.15, 0.15, 0.15, 0.01);
+            }
         }
     }
 }
