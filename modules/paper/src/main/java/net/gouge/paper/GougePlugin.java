@@ -267,6 +267,7 @@ public final class GougePlugin extends JavaPlugin {
                     release.slip(p, tool, loc);
                     return false;
                 }
+                effects.cling(p, s);
                 if (!(space && canClimb)) s.launchCharge = 0;
                 if (space && canClimb) {
                     int r = climb(p, s, hit, slot, tool);
@@ -279,10 +280,6 @@ public final class GougePlugin extends JavaPlugin {
                 dbg(p, "hang realVy=" + realVy);
                 p.setVelocity(shim != 0 ? shimmy.shimmyStep(p, s, tool, shim, hit, block, hardness) : new Vector());
                 if (now % 20 == 0 && !rules.drain(p, slot, tool)) return false;
-                if (now % 20 == 10) {
-                    p.getWorld().playSound(loc, Sound.BLOCK_CHAIN_STEP, SoundCategory.PLAYERS, 0.4f,
-                            0.8f + (float) Math.random() * 0.2f);
-                }
                 return true;
             }
             s.hangEnd = -1;

@@ -59,19 +59,49 @@ final class Effects {
         p.sendBlockDamage(b.getLocation(), progress, -1 - (p.getEntityId() * 32 + slot));
     }
 
+    static boolean isMetal(Sound s) {
+        return s.equals(Sound.BLOCK_METAL_HIT) || s.equals(Sound.BLOCK_COPPER_HIT)
+                || s.equals(Sound.BLOCK_NETHERITE_BLOCK_HIT) || s.equals(Sound.BLOCK_ANVIL_HIT);
+    }
+
+    static boolean isDusty(Sound s) {
+        return s.equals(Sound.BLOCK_SAND_HIT) || s.equals(Sound.BLOCK_GRAVEL_HIT) || s.equals(Sound.BLOCK_SNOW_HIT);
+    }
+
+    void warnLowDurability(Player p) {
+        var it = p.getInventory().getItem(rules.slotOf(p));
+        int max = it.getType().getMaxDurability();
+        if (max <= 0 || !(it.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable d)
+                || max - d.getDamage() > Math.max(8, max / 10)) return;
+        Location at = p.getLocation();
+        snd(at, Sound.ENTITY_ITEM_BREAK, 0.5f, 1.6f);
+    }
+
+    void cling(Player p, Session s) {
+        boolean timed = !plugin.getConfig().getBoolean("unlimited_grip");
+        float left = timed ? (float) (s.hangEnd - plugin.now) / Math.max(1, s.hangEnd - s.grabTick) : 1f;
+        float urgency = left >= 0.5f ? 0f : 1f - left / 0.5f;
+        if (plugin.now - Math.max(s.clingAt, s.grabTick) < Math.round(20 - 10 * urgency)) return;
+        s.clingAt = plugin.now;
+        snd(p.getLocation(), Sound.BLOCK_CHAIN_STEP, 0.4f + 0.2f * urgency,
+                0.8f + 0.5f * urgency + (float) Math.random() * 0.2f);
+    }
+
     void fx(Player p, Session s, Hit hit, Block block, float hardness) {
         trail(p, s, block);
+        if (plugin.now % 20 == 0) warnLowDurability(p);
         if (plugin.now % 5 != 0) return;
         Location at = hit.at().toLocation(p.getWorld());
         var snd = block.getBlockData().getSoundGroup().getHitSound();
         if (rules.isHard(block)) {
-            p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, 0.6f, 0.6f + (float) Math.random() * 0.2f);
-            p.getWorld().spawnParticle(Particle.CRIT, at, 2, 0.05, 0.05, 0.05, 0.05);
+            p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, (isMetal(snd) ? 1.1f : 0.6f) + (float) Math.random() * 0.2f);
+            p.getWorld().spawnParticle(isMetal(snd) ? Particle.ELECTRIC_SPARK : Particle.CRIT, at, 2, 0.05, 0.05, 0.05, 0.05);
             p.getWorld().spawnParticle(BLOCK_PARTICLE, at.clone().add(hit.face().getModX() * 0.15, 0.3,
                     hit.face().getModZ() * 0.15), 8, 0.05, 0.3, 0.05, 0.08, block.getBlockData());
         } else {
             p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, 0.5f, 1f);
             p.getWorld().spawnParticle(BLOCK_PARTICLE, at, 6, 0.15, 0.15, 0.15, 0.0, block.getBlockData());
+            if (isDusty(snd)) p.getWorld().spawnParticle(Particle.POOF, at, 2, 0.15, 0.15, 0.15, 0.01);
         }
     }
 }
