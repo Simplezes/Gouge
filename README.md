@@ -63,7 +63,7 @@ Apply these to pickaxes with an Enchanting Table or an Anvil:
 
 Every value lives in `config/gouge.toml`, including a `[block_grip]` table to make specific blocks or tags easier or harder to hold. Every new feature can be switched on or off and tuned.
 
-**Grip stamina.** Without Paraglider or ParCool, your grip is a stamina pool that carries over between grabs: hanging and climbing drain it, and it refills whenever you are not hanging, climbing or shimmying (`mechanics.stamina_refill_time`, 3 seconds by default, 0 for the old fresh-timer-every-grab behaviour). With Paraglider or ParCool installed, their stamina is used instead and none of this shows. A small pixel wheel beside the crosshair shows it: one ring per Grip level, a gold pip per pickaxe in hand, green to yellow to red as it runs low. Set `mechanics.persistent_stamina = false` to go back to the original fresh timer on every grab. You can also tune the refill delay and how fast climbing and shimmying drain it. The `[hud]` section covers everything about the wheel: on or off, side, position offset, size, opacity, when it shows, the gold pips and Grip rings, blinking, the colour thresholds and the three colours.
+**Grip stamina (experimental).** Off by default. Set `experimental.persistent_stamina = true` for a grip stamina pool and wheel.
 
 If you have **Cloth Config** installed (plus **Mod Menu** on Fabric), the main options also get an in-game screen. It is optional, and the mod runs the same without it.
 
