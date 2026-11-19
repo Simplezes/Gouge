@@ -11,6 +11,8 @@ public class ConfigData {
     public Traverse traverse = new Traverse();
     public Launch launch = new Launch();
     public Effects effects = new Effects();
+    public Hud hud = new Hud();
+    public Experimental experimental = new Experimental();
     public Map<String, Double> block_grip = new LinkedHashMap<>();
     public Map<String, PickaxeStats> pickaxes = new LinkedHashMap<>();
     public Map<String, String> block_overrides = new LinkedHashMap<>();
@@ -39,6 +41,10 @@ public class ConfigData {
         public boolean dual_grip_enabled = true;
         public double dual_grip_multiplier = 1.5;
         public boolean unlimited_grip = false;
+        public double stamina_refill_time = 3.0;
+        public double stamina_refill_delay = 0.0;
+        public double stamina_climb_multiplier = 1.0;
+        public double stamina_shimmy_multiplier = 1.0;
         public double release_cooldown = 0.5;
         public boolean use_mod_stamina = true;
         public double stamina_hang_cost = 12.0;
@@ -71,6 +77,31 @@ public class ConfigData {
         public boolean particles = true;
         public boolean sounds = true;
         public double volume = 1.0;
+    }
+
+    public static class Experimental {
+
+        public boolean persistent_stamina = false;
+    }
+
+    public static class Hud {
+
+        public boolean enabled = true;
+        public double show_below = 1.0;
+        public boolean left_side = false;
+        public int offset_x = 0;
+        public int offset_y = 0;
+        public int scale = 1;
+        public double opacity = 1.0;
+        public boolean show_pips = true;
+        public boolean show_rings = true;
+        public boolean blink_when_low = true;
+        public double hold_time = 0.75;
+        public double mid_threshold = 0.5;
+        public double low_threshold = 0.25;
+        public String high_color = "#55C43A";
+        public String mid_color = "#F0C933";
+        public String low_color = "#D93A2C";
     }
 
     public static class Launch {

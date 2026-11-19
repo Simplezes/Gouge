@@ -33,6 +33,11 @@ public final class GripState {
     static final Map<UUID, ItemStack> activeStack = new ConcurrentHashMap<>();
     static final Map<UUID, Integer> launchCharge = new ConcurrentHashMap<>();
     static final Map<UUID, int[]> launchAssist = new ConcurrentHashMap<>();
+    static final Map<UUID, Float> pools = new ConcurrentHashMap<>();
+    static final Map<UUID, Float> sentPools = new ConcurrentHashMap<>();
+    static final Map<UUID, Integer> sentAt = new ConcurrentHashMap<>();
+    static final Map<UUID, Integer> drainedAt = new ConcurrentHashMap<>();
+    static final float POOL_SYNC_STEP = 0.02f;
     public static final int MANTLE_REGRAB_TICKS = 20;
 
     public static boolean hasMantled(ServerPlayer player) {
@@ -65,6 +70,10 @@ public final class GripState {
         activeUse.remove(id);
         launchCharge.remove(id);
         launchAssist.remove(id);
+        pools.remove(id);
+        sentPools.remove(id);
+        sentAt.remove(id);
+        drainedAt.remove(id);
     }
 
     public static void markActive(UUID id, InteractionHand hand, ItemStack stack) {

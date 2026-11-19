@@ -71,6 +71,11 @@ public final class GougeConfigScreen {
                         entry.setMin(range[0]).setMax(range[1]);
                     }
                     category.addEntry(entry.build());
+                } else if (f.getType() == String.class) {
+                    category.addEntry(entries.startStrField(label, (String) f.get(target))
+                            .setDefaultValue((String) f.get(defaults))
+                            .setSaveConsumer(v -> set(f, target, v))
+                            .build());
                 }
             } catch (IllegalAccessException e) {
                 GougeConfig.LOGGER.warn("Skipping config field {}.{}", name, f.getName(), e);
