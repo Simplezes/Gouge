@@ -59,8 +59,6 @@ public final class ConfigValidator {
         c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
         c.mechanics.release_cooldown = clamp("mechanics.release_cooldown", c.mechanics.release_cooldown, 0.0, 600.0);
         c.mechanics.stamina_hang_cost = clamp("mechanics.stamina_hang_cost", c.mechanics.stamina_hang_cost, 0.0, 100.0);
-        c.mechanics.stamina_climb_cost = clamp("mechanics.stamina_climb_cost", c.mechanics.stamina_climb_cost, 0.0, 100.0);
-        c.mechanics.stamina_shimmy_cost = clamp("mechanics.stamina_shimmy_cost", c.mechanics.stamina_shimmy_cost, 0.0, 100.0);
         c.mechanics.soft_slide_ramp = clamp("mechanics.soft_slide_ramp", c.mechanics.soft_slide_ramp, 0.0, 1.0);
 
         c.wall_jump.time_window = clamp("wall_jump.time_window", c.wall_jump.time_window, 0.05, 5.0);

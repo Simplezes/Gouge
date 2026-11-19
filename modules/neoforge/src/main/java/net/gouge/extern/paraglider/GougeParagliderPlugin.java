@@ -12,9 +12,7 @@ import tictim.paraglider.api.stamina.Stamina;
 
 @ParagliderPlugin
 public final class GougeParagliderPlugin implements MovementPlugin {
-    private static final ResourceLocation HANG = ResourceLocation.fromNamespaceAndPath("gouge", "hang");
-    private static final ResourceLocation CLIMB = ResourceLocation.fromNamespaceAndPath("gouge", "climb");
-    private static final ResourceLocation SHIMMY = ResourceLocation.fromNamespaceAndPath("gouge", "shimmy");
+    private ResourceLocation grip;
 
     private static double delta(double percentPerSecond) {
         return -percentPerSecond / 100.0 * Stamina.STAMINA_PER_WHEEL / 20.0;
@@ -22,29 +20,20 @@ public final class GougeParagliderPlugin implements MovementPlugin {
 
     @Override
     public void registerNewStates(PlayerStateRegister register) {
-        var m = GougeConfig.INSTANCE.mechanics;
-        register.register(HANG, delta(m.stamina_hang_cost));
-        register.register(CLIMB, delta(m.stamina_climb_cost));
-        register.register(SHIMMY, delta(m.stamina_shimmy_cost));
+        double cost = GougeConfig.INSTANCE.mechanics.stamina_hang_cost;
+        grip = ResourceLocation.fromNamespaceAndPath("gouge", "grip_" + Math.round(cost * 100));
+        register.register(grip, delta(cost));
     }
 
     @Override
     public void modifyRegisteredStates(PlayerStateModifier modifier) {
-        boolean ok = modifier.exists(HANG) && modifier.exists(CLIMB) && modifier.exists(SHIMMY);
-        LogUtils.getLogger().info("[Gouge] Paraglider states {}", ok ? "OK" : "MISSING");
+        LogUtils.getLogger().info("[Gouge] Paraglider states {}", modifier.exists(grip) ? "OK" : "MISSING");
     }
 
     @Override
     public void registerStateConnections(PlayerStateConnectionRegister register) {
-        connect(register, HANG, 0);
-        connect(register, CLIMB, 1);
-        connect(register, SHIMMY, 2);
-    }
-
-    private static void connect(PlayerStateConnectionRegister register, ResourceLocation state, int mode) {
-        register.connect(ParagliderPlayerStates.IDLE, state,
-                ctx -> GougePhysics.modStamina() && GripState.isActive(ctx.player().getUUID())
-                        && GougePhysics.gripMode(ctx.player()) == mode,
+        register.connect(ParagliderPlayerStates.IDLE, grip,
+                ctx -> GougePhysics.modStamina() && GripState.isActive(ctx.player().getUUID()),
                 9.0);
     }
 }
