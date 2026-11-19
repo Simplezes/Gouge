@@ -152,7 +152,9 @@ public final class GougePhysics {
         if (edge || moved) {
             sentPools.put(id, value);
             sentAt.put(id, player.tickCount);
-            GougePlatform.get().sendStamina(player, value);
+            if (GougeConfig.INSTANCE.experimental.persistent_stamina) {
+                GougePlatform.get().sendStamina(player, value);
+            }
         }
     }
 
