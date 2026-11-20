@@ -331,7 +331,9 @@ public final class GougePlugin extends JavaPlugin {
         if (ledge == null || ledge.getType().getHardness() < 0) return 0;
 
         if (rules.isHard(ledge) && canStand(ledge) && loc.getY() >= ledgeTop(ledge) - 0.45) {
-            double dx = ledge.getX() + 0.5 - loc.getX(), dz = ledge.getZ() + 0.5 - loc.getZ();
+            boolean alongX = face.getModX() != 0;
+            double dx = (alongX ? ledge.getX() + 0.5 : clamp(loc.getX(), ledge.getX() + 0.3, ledge.getX() + 0.7)) - loc.getX();
+            double dz = (alongX ? clamp(loc.getZ(), ledge.getZ() + 0.3, ledge.getZ() + 0.7) : ledge.getZ() + 0.5) - loc.getZ();
             double len = Math.sqrt(dx * dx + dz * dz);
             double fx = len > 1e-4 ? dx / len : -face.getModX(), fz = len > 1e-4 ? dz / len : -face.getModZ();
             double speed = clamp(len / 6.0, 0.12, 0.3);
