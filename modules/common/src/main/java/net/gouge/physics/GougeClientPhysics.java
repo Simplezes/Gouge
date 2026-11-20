@@ -25,6 +25,7 @@ public final class GougeClientPhysics {
     private static int launchCharge;
     private static int assistTicks;
     private static Direction assistDir;
+    private static BlockPos assistCap;
     private static int gripStart = -1;
     private static int gripBase;
     private static int gripRings = 1;
@@ -108,7 +109,7 @@ public final class GougeClientPhysics {
             if (GougePhysics.grounded(local) || --assistTicks <= 0) {
                 assistTicks = 0;
             } else {
-                Vec3 push = GripMotion.assistPush(local.level(), local, assistDir);
+                Vec3 push = GripMotion.assistPush(local.level(), local, assistDir, assistCap.getX(), assistCap.getZ());
                 if (push != null) {
                     Vec3 mv = local.getDeltaMovement();
                     local.setDeltaMovement(push.x, mv.y, push.z);
@@ -353,6 +354,7 @@ public final class GougeClientPhysics {
         mantledUntil = local.tickCount + GripState.MANTLE_REGRAB_TICKS;
         assistTicks = GripMotion.LAUNCH_ASSIST_TICKS;
         assistDir = face;
+        assistCap = cap;
     }
 
     private static void start(LocalPlayer local) {

@@ -225,7 +225,7 @@ public final class ClimbMoves {
         player.fallDistance = 0.0F;
         player.syncVelocity = true;
         mantled.put(id, now);
-        launchAssist.put(id, new int[]{LAUNCH_ASSIST_TICKS, dir.get3DDataValue()});
+        launchAssist.put(id, new int[]{LAUNCH_ASSIST_TICKS, dir.get3DDataValue(), cap.getX(), cap.getZ()});
         player.setNoGravity(false);
         gougeNoGravity.remove(id);
         release(player);
