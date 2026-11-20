@@ -84,7 +84,7 @@ public final class WallGeometry {
         for (int i = 0; i < 4; i++) {
             BlockPos up = cell.above();
             if (world.getBlockState(up).getCollisionShape(world, up).isEmpty()
-                    || !isHardBlock(world.getBlockState(up))) {
+                    || (isHardBlock(world.getBlockState(cell)) && !isHardBlock(world.getBlockState(up)))) {
                 break;
             }
             cell = up;
@@ -114,7 +114,12 @@ public final class WallGeometry {
         }
         BlockPos hands = new BlockPos(pin.getX(), Mth.floor(feetY + step + 1.0), pin.getZ());
         BlockState at = world.getBlockState(hands);
-        return !at.getCollisionShape(world, hands).isEmpty() && !isHardBlock(at);
+        if (at.getCollisionShape(world, hands).isEmpty() || isHardBlock(at)) {
+            return false;
+        }
+        BlockPos below = hands.below();
+        BlockState under = world.getBlockState(below);
+        return under.getCollisionShape(world, below).isEmpty() || isHardBlock(under);
     }
 
     public static BlockPos climbFocus(Level world, BlockPos pin, double feetY) {
