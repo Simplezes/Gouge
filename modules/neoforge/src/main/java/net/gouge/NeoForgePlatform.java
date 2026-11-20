@@ -48,7 +48,9 @@ public final class NeoForgePlatform implements GougePlatform {
 
     @Override
     public void sendStamina(ServerPlayer player, float level) {
-        PacketDistributor.sendToPlayer(player, new StaminaPayload(level));
+        if (player.connection.hasChannel(StaminaPayload.TYPE)) {
+            PacketDistributor.sendToPlayer(player, new StaminaPayload(level));
+        }
     }
 
     @Override
