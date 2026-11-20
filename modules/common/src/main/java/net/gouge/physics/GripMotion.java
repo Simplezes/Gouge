@@ -4,6 +4,7 @@ import net.gouge.config.ConfigData;
 import net.gouge.config.GougeConfig;
 import net.gouge.enchant.GougeEnchantments;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -56,8 +57,12 @@ public final class GripMotion {
         return new Vec3(0, base, 0);
     }
 
-    public static Vec3 assistPush(Level world, Player player, Direction face) {
-        Vec3 toward = new Vec3(-face.getStepX(), 0, -face.getStepZ());
+    public static Vec3 assistPush(Level world, Player player, Direction face, int capX, int capZ) {
+        boolean alongX = face.getAxis() == Direction.Axis.X;
+        double dx = (alongX ? capX + 0.5 : Mth.clamp(player.getX(), capX + 0.3, capX + 0.7)) - player.getX();
+        double dz = (alongX ? Mth.clamp(player.getZ(), capZ + 0.3, capZ + 0.7) : capZ + 0.5) - player.getZ();
+        double len = Math.sqrt(dx * dx + dz * dz);
+        Vec3 toward = len > 1.0E-4 ? new Vec3(dx / len, 0, dz / len) : new Vec3(-face.getStepX(), 0, -face.getStepZ());
         if (GougeConfig.INSTANCE.launch.assist_speed <= 0
                 || !world.noCollision(player, player.getBoundingBox().move(toward.scale(0.3)))
                 || (player.getDeltaMovement().y <= 0 && !world.noCollision(player, player.getBoundingBox().move(0, -0.6, 0)))) {

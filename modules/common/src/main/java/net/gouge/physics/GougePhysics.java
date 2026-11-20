@@ -142,7 +142,7 @@ public final class GougePhysics {
             } else {
                 puff(player.level(), ParticleTypes.CLOUD, player.getX(), player.getY() + 0.1, player.getZ(),
                         2, 0.15, 0.05, 0.15, 0.01);
-                Vec3 push = assistPush(player.level(), player, Direction.from3DDataValue(assist[1]));
+                Vec3 push = assistPush(player.level(), player, Direction.from3DDataValue(assist[1]), assist[2], assist[3]);
                 if (push != null) {
                     Vec3 v = player.getDeltaMovement();
                     player.setDeltaMovement(push.x, v.y, push.z);
