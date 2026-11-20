@@ -20,6 +20,16 @@ final class Effects {
 
     static final Particle BLOCK_PARTICLE = blockParticle();
 
+    static final Particle DUST_PUFF = particle("POOF", "EXPLOSION_NORMAL");
+
+    static Particle particle(String modern, String legacy) {
+        try {
+            return Particle.valueOf(modern);
+        } catch (IllegalArgumentException e) {
+            return Particle.valueOf(legacy);
+        }
+    }
+
     static Particle blockParticle() {
         try {
             return Particle.valueOf("BLOCK");
@@ -94,14 +104,14 @@ final class Effects {
         Location at = hit.at().toLocation(p.getWorld());
         var snd = block.getBlockData().getSoundGroup().getHitSound();
         if (rules.isHard(block)) {
-            p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, (isMetal(snd) ? 1.1f : 0.6f) + (float) Math.random() * 0.2f);
+            p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, 1f, (isMetal(snd) ? 1.1f : 0.6f) + (float) Math.random() * 0.2f);
             p.getWorld().spawnParticle(isMetal(snd) ? Particle.ELECTRIC_SPARK : Particle.CRIT, at, 2, 0.05, 0.05, 0.05, 0.05);
             p.getWorld().spawnParticle(BLOCK_PARTICLE, at.clone().add(hit.face().getModX() * 0.15, 0.3,
                     hit.face().getModZ() * 0.15), 8, 0.05, 0.3, 0.05, 0.08, block.getBlockData());
         } else {
             p.getWorld().playSound(at, snd, SoundCategory.PLAYERS, 0.5f, 1f);
             p.getWorld().spawnParticle(BLOCK_PARTICLE, at, 6, 0.15, 0.15, 0.15, 0.0, block.getBlockData());
-            if (isDusty(snd)) p.getWorld().spawnParticle(Particle.POOF, at, 2, 0.15, 0.15, 0.15, 0.01);
+            if (isDusty(snd)) p.getWorld().spawnParticle(DUST_PUFF, at, 2, 0.15, 0.15, 0.15, 0.01);
         }
     }
 }
