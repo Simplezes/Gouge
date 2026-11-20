@@ -16,7 +16,7 @@ public final class GougeParagliderPlugin implements MovementPlugin {
     private ResourceLocation grip;
 
     private static int delta(double percentPerSecond) {
-        return -(int) Math.round(percentPerSecond / 100.0 * STAMINA_PER_WHEEL / 20.0);
+        return -(int) Math.round(GougePhysics.staminaCurve(percentPerSecond) * STAMINA_PER_WHEEL / 20.0);
     }
 
     @Override

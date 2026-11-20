@@ -145,6 +145,11 @@ public final class GougePhysics {
         return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
     }
 
+    public static double staminaCurve(double percent) {
+        double p = percent / 100.0;
+        return p * (1.0 + 9.0 * p * p);
+    }
+
     public static boolean modStamina() {
         return GougeConfig.INSTANCE.mechanics.use_mod_stamina && GougePlatform.get().hasModStamina();
     }
