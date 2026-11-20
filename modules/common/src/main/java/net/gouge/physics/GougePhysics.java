@@ -135,9 +135,18 @@ public final class GougePhysics {
         return GougeConfig.INSTANCE.experimental.persistent_stamina ? m.stamina_refill_time : 0.0;
     }
 
+    public static double staminaCurve(double percent) {
+        double p = percent / 100.0;
+        return p * (1.0 + 9.0 * p * p);
+    }
+
     public static double drainRate(int mode) {
         ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-        return mode == 1 ? m.stamina_climb_multiplier : mode == 2 ? m.stamina_shimmy_multiplier : 1.0;
+        double base = mode == 1 ? m.stamina_climb_multiplier : mode == 2 ? m.stamina_shimmy_multiplier : 1.0;
+        if (!GougeConfig.INSTANCE.experimental.persistent_stamina) {
+            return base;
+        }
+        return base * staminaCurve(m.stamina_hang_cost) / staminaCurve(12.0);
     }
 
     public static boolean modStamina() {
