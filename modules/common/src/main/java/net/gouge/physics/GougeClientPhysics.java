@@ -149,8 +149,7 @@ public final class GougeClientPhysics {
             }
             if (predicting && BlockRules.isHardBlock(state)) {
                 ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-                double perSecond = m.stamina_hang_cost;
-                pendingStamina += perSecond / 2000.0;
+                pendingStamina += GougePhysics.staminaCurve(m.stamina_hang_cost) / 20.0;
             }
         }
         if (!GougeConfig.INSTANCE.mechanics.client_prediction) {
