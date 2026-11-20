@@ -31,8 +31,9 @@ public final class WallGeometry {
     }
 
     public static Vec3 mantleVelocity(Player player, Direction wallDir, BlockPos ledge) {
-        double dx = ledge.getX() + 0.5 - player.getX();
-        double dz = ledge.getZ() + 0.5 - player.getZ();
+        boolean alongX = wallDir.getAxis() == Direction.Axis.X;
+        double dx = (alongX ? ledge.getX() + 0.5 : Mth.clamp(player.getX(), ledge.getX() + 0.3, ledge.getX() + 0.7)) - player.getX();
+        double dz = (alongX ? Mth.clamp(player.getZ(), ledge.getZ() + 0.3, ledge.getZ() + 0.7) : ledge.getZ() + 0.5) - player.getZ();
         double len = Math.sqrt(dx * dx + dz * dz);
         double fx = len > 1.0E-4 ? dx / len : -wallDir.getStepX();
         double fz = len > 1.0E-4 ? dz / len : -wallDir.getStepZ();
