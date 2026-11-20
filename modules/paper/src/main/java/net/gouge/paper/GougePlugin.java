@@ -324,7 +324,8 @@ public final class GougePlugin extends JavaPlugin {
         if (wallDistance(s.pin, face, loc) > cfg.getDouble("climbing.reach")) return 0;
         Block ledge = climbLedge(w, s.pin.getX(), s.pin.getZ(), loc.getY());
         Block hands = w.getBlockAt(s.pin.getX(), (int) Math.floor(loc.getY() + cfg.getDouble("climbing.speed") + 1.0), s.pin.getZ());
-        if (solid(hands) && !rules.isHard(hands) && cfg.getBoolean("climbing.stop_at_soft_block")) {
+        Block under = hands.getRelative(BlockFace.DOWN);
+        if (solid(hands) && !rules.isHard(hands) && (!solid(under) || rules.isHard(under)) && cfg.getBoolean("climbing.stop_at_soft_block")) {
             return launch.tryLaunch(p, s, tool) ? 2 : 0;
         }
         s.launchCharge = 0;
