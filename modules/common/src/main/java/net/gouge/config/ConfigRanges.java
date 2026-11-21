@@ -7,7 +7,7 @@ import java.util.Map;
 public final class ConfigRanges {
 
     public static final List<String> SECTIONS = List.of("mechanics", "climbing", "traverse", "launch", "wall_jump",
-            "enchantments", "effects");
+            "enchantments", "effects", "hud");
 
     public static final Map<String, double[]> RANGES = new LinkedHashMap<>();
 
@@ -21,6 +21,7 @@ public final class ConfigRanges {
         RANGES.put("mechanics.max_drift", new double[]{0, 16});
         RANGES.put("mechanics.dual_grip_multiplier", new double[]{1, 10});
         RANGES.put("mechanics.release_cooldown", new double[]{0, 600});
+        RANGES.put("mechanics.stamina_refill_time", new double[]{0, 120});
         RANGES.put("mechanics.stamina_hang_cost", new double[]{0, 100});
         RANGES.put("mechanics.soft_slide_ramp", new double[]{0, 1});
         RANGES.put("climbing.speed", new double[]{0.01, 0.5});
@@ -41,6 +42,17 @@ public final class ConfigRanges {
         RANGES.put("enchantments.grip_bonus", new double[]{0, 60});
         RANGES.put("enchantments.momentum_reduction", new double[]{0, 60});
         RANGES.put("effects.volume", new double[]{0, 2});
+        RANGES.put("hud.show_below", new double[]{0, 1});
+        RANGES.put("hud.offset_x", new double[]{-400, 400});
+        RANGES.put("hud.offset_y", new double[]{-400, 400});
+        RANGES.put("hud.scale", new double[]{1, 4});
+        RANGES.put("hud.opacity", new double[]{0.1, 1});
+        RANGES.put("hud.hold_time", new double[]{0, 10});
+        RANGES.put("hud.mid_threshold", new double[]{0, 1});
+        RANGES.put("hud.low_threshold", new double[]{0, 1});
+        RANGES.put("mechanics.stamina_refill_delay", new double[]{0, 30});
+        RANGES.put("mechanics.stamina_climb_multiplier", new double[]{0, 10});
+        RANGES.put("mechanics.stamina_shimmy_multiplier", new double[]{0, 10});
     }
 
     private ConfigRanges() {

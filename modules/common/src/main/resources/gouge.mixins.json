@@ -11,6 +11,9 @@
     "GougePlayerTickMixin",
     "GougeServerInputMixin"
   ],
+  "client": [
+    "GougeHudMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

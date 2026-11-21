@@ -71,6 +71,23 @@ public final class ConfigWriter {
         c.setComment("mechanics.unlimited_grip", """
                  Sandbox setting: allows infinite hang duration on walls without slipping.
                  Disabled by default (false). Durability drain still applies unless damage_rate is 0.""");
+        c.set("mechanics.stamina_refill_time", d.mechanics.stamina_refill_time);
+        c.setComment("mechanics.stamina_refill_time", """
+                 Seconds to refill an empty pool whenever you are not hanging, climbing or
+                 shimmying. Set to 0 to refill instantly. Only used with experimental.persistent_stamina.
+                 Range: 0 - 120""");
+        c.set("mechanics.stamina_refill_delay", d.mechanics.stamina_refill_delay);
+        c.setComment("mechanics.stamina_refill_delay", """
+                 Seconds to wait after letting go before the pool starts refilling. 0 starts
+                 refilling immediately. Only used with experimental.persistent_stamina. Range: 0 - 30""");
+        c.set("mechanics.stamina_climb_multiplier", d.mechanics.stamina_climb_multiplier);
+        c.setComment("mechanics.stamina_climb_multiplier", """
+                 How fast the pool drains while climbing compared to hanging. 1.0 drains at the
+                 hanging rate, 2.0 twice as fast, 0 makes climbing free. Range: 0 - 10""");
+        c.set("mechanics.stamina_shimmy_multiplier", d.mechanics.stamina_shimmy_multiplier);
+        c.setComment("mechanics.stamina_shimmy_multiplier", """
+                 How fast the pool drains while shimmying sideways compared to hanging.
+                 Range: 0 - 10""");
         c.set("mechanics.release_cooldown", d.mechanics.release_cooldown);
         c.setComment("mechanics.release_cooldown", """
                  After letting go of a wall on purpose (releasing the use key or switching away
@@ -145,6 +162,61 @@ public final class ConfigWriter {
         c.setComment("effects.sounds", " Play grip, scrape and launch sounds. Gameplay is not affected.");
         c.set("effects.volume", d.effects.volume);
         c.setComment("effects.volume", " Volume multiplier for Gouge sounds. Range: 0.0 - 2.0");
+
+        c.setComment("experimental", """
+                 =======================================================
+                 EXPERIMENTAL
+                 Work in progress features. Disabled by default and may change or be removed.
+                 =======================================================""");
+        c.set("experimental.persistent_stamina", d.experimental.persistent_stamina);
+        c.setComment("experimental.persistent_stamina", """
+                 Gouge's own grip stamina: a pool that carries over between grips. Hanging,
+                 climbing and shimmying drain it and it refills over time, so grabbing again
+                 half-empty gives you less hang time, and the stamina wheel is shown. Disabled by
+                 default (false): every grab starts with a full hang timer. Not used while a
+                 stamina mod (Paraglider or ParCool) provides the stamina, or with unlimited_grip.""");
+
+        c.setComment("hud", """
+                 =======================================================
+                 HUD
+                 The grip stamina wheel shown beside the crosshair. Only drawn when no stamina
+                 mod (Paraglider or ParCool) is in use. Client-side, gameplay is not affected.
+                 =======================================================""");
+        c.set("hud.enabled", d.hud.enabled);
+        c.setComment("hud.enabled", " Show the grip stamina wheel.");
+        c.set("hud.show_below", d.hud.show_below);
+        c.setComment("hud.show_below", """
+                 Only show the wheel while your stamina is below this fraction. 1.0 shows it whenever
+                 you are gripping or refilling, 0.75 hides it until you have spent a quarter, 0.25 only
+                 shows it when you are running low. Range: 0.0 - 1.0""");
+        c.set("hud.left_side", d.hud.left_side);
+        c.setComment("hud.left_side", " Draw the wheel on the left of the crosshair instead of the right.");
+        c.set("hud.offset_x", d.hud.offset_x);
+        c.setComment("hud.offset_x", " Move the wheel horizontally by this many GUI pixels (positive is right). Range: -400 - 400");
+        c.set("hud.offset_y", d.hud.offset_y);
+        c.setComment("hud.offset_y", " Move the wheel vertically by this many GUI pixels (positive is down). Range: -400 - 400");
+        c.set("hud.scale", d.hud.scale);
+        c.setComment("hud.scale", " Whole-number size multiplier for the wheel. Range: 1 - 4");
+        c.set("hud.opacity", d.hud.opacity);
+        c.setComment("hud.opacity", " Overall opacity of the wheel, 1.0 is the default look. Range: 0.1 - 1.0");
+        c.set("hud.show_pips", d.hud.show_pips);
+        c.setComment("hud.show_pips", " Show the gold pips under the wheel, one per pickaxe you are holding.");
+        c.set("hud.show_rings", d.hud.show_rings);
+        c.setComment("hud.show_rings", " Show one extra ring per Grip level. When false the wheel always has a single ring.");
+        c.set("hud.blink_when_low", d.hud.blink_when_low);
+        c.setComment("hud.blink_when_low", " Blink while stamina is low and shake when it runs out. Turn off for a steady wheel.");
+        c.set("hud.hold_time", d.hud.hold_time);
+        c.setComment("hud.hold_time", " Seconds the wheel stays on screen after it is no longer needed. Range: 0 - 10");
+        c.set("hud.mid_threshold", d.hud.mid_threshold);
+        c.setComment("hud.mid_threshold", " Below this fraction of stamina the wheel switches to the mid colour. Range: 0.0 - 1.0");
+        c.set("hud.low_threshold", d.hud.low_threshold);
+        c.setComment("hud.low_threshold", " Below this fraction of stamina the wheel switches to the low colour and blinks. Range: 0.0 - 1.0");
+        c.set("hud.high_color", d.hud.high_color);
+        c.setComment("hud.high_color", " Wheel colour while stamina is high, as #RRGGBB.");
+        c.set("hud.mid_color", d.hud.mid_color);
+        c.setComment("hud.mid_color", " Wheel colour while stamina is getting low, as #RRGGBB.");
+        c.set("hud.low_color", d.hud.low_color);
+        c.setComment("hud.low_color", " Wheel colour while stamina is nearly gone, as #RRGGBB.");
 
         c.setComment("traverse", """
                  =======================================================

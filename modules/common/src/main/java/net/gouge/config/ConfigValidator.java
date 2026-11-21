@@ -58,6 +58,10 @@ public final class ConfigValidator {
         c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
         c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
         c.mechanics.release_cooldown = clamp("mechanics.release_cooldown", c.mechanics.release_cooldown, 0.0, 600.0);
+        c.mechanics.stamina_refill_time = clamp("mechanics.stamina_refill_time", c.mechanics.stamina_refill_time, 0.0, 120.0);
+        c.mechanics.stamina_refill_delay = clamp("mechanics.stamina_refill_delay", c.mechanics.stamina_refill_delay, 0.0, 30.0);
+        c.mechanics.stamina_climb_multiplier = clamp("mechanics.stamina_climb_multiplier", c.mechanics.stamina_climb_multiplier, 0.0, 10.0);
+        c.mechanics.stamina_shimmy_multiplier = clamp("mechanics.stamina_shimmy_multiplier", c.mechanics.stamina_shimmy_multiplier, 0.0, 10.0);
         c.mechanics.stamina_hang_cost = clamp("mechanics.stamina_hang_cost", c.mechanics.stamina_hang_cost, 0.0, 100.0);
         c.mechanics.soft_slide_ramp = clamp("mechanics.soft_slide_ramp", c.mechanics.soft_slide_ramp, 0.0, 1.0);
 
@@ -73,6 +77,14 @@ public final class ConfigValidator {
         c.traverse.durability_cost = (int) clamp("traverse.durability_cost", c.traverse.durability_cost, 0, 100);
         c.launch.assist_speed = clamp("launch.assist_speed", c.launch.assist_speed, 0.0, 0.5);
         c.effects.volume = clamp("effects.volume", c.effects.volume, 0.0, 2.0);
+        c.hud.show_below = clamp("hud.show_below", c.hud.show_below, 0.0, 1.0);
+        c.hud.offset_x = (int) clamp("hud.offset_x", c.hud.offset_x, -400, 400);
+        c.hud.offset_y = (int) clamp("hud.offset_y", c.hud.offset_y, -400, 400);
+        c.hud.scale = (int) clamp("hud.scale", c.hud.scale, 1, 4);
+        c.hud.opacity = clamp("hud.opacity", c.hud.opacity, 0.1, 1.0);
+        c.hud.hold_time = clamp("hud.hold_time", c.hud.hold_time, 0.0, 10.0);
+        c.hud.mid_threshold = clamp("hud.mid_threshold", c.hud.mid_threshold, 0.0, 1.0);
+        c.hud.low_threshold = clamp("hud.low_threshold", c.hud.low_threshold, 0.0, c.hud.mid_threshold);
         c.launch.charge_time = clamp("launch.charge_time", c.launch.charge_time, 0.0, 5.0);
         c.launch.upward_boost = clamp("launch.upward_boost", c.launch.upward_boost, 0.1, 2.0);
         c.launch.max_cap_height = (int) clamp("launch.max_cap_height", c.launch.max_cap_height, 1, 4);
