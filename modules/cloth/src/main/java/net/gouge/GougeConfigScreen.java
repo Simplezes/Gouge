@@ -261,7 +261,7 @@ public final class GougeConfigScreen {
                         Supplier<List<String[]>> load, Consumer<List<String[]>> apply) {
         category.addEntry(new ButtonEntry(Component.literal(label), Component.literal(button), () -> {
             Minecraft mc = Minecraft.getInstance();
-            mc.setScreenAndShow(new RowsScreen(built[0], spec, load.get(), rows -> {
+            mc.setScreen(new RowsScreen(built[0], spec, load.get(), rows -> {
                 apply.accept(rows);
                 GougeConfig.save();
             }));
