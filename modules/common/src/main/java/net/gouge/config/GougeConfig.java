@@ -36,9 +36,13 @@ public class GougeConfig {
             LOGGER.error("Could not read gouge.toml, keeping previous settings", e);
         }
 
+        boolean legacy = migrate(config);
         INSTANCE = validate(read(config));
 
-        if (isNew || hasMissingKeys(config, INSTANCE)) {
+        if (legacy) {
+            config.clear();
+        }
+        if (isNew || legacy || hasMissingKeys(config, INSTANCE)) {
             write(config, INSTANCE);
             config.save();
         }

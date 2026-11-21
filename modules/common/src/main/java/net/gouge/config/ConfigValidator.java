@@ -1,14 +1,8 @@
 package net.gouge.config;
 
-import net.gouge.config.ConfigData.Climbing;
-import net.gouge.config.ConfigData.Effects;
-import net.gouge.config.ConfigData.Enchantments;
-import net.gouge.config.ConfigData.Launch;
-import net.gouge.config.ConfigData.Mechanics;
 import net.gouge.config.ConfigData.PickaxeStats;
-import net.gouge.config.ConfigData.Traverse;
-import net.gouge.config.ConfigData.WallJump;
 
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,82 +12,41 @@ import static net.gouge.config.GougeConfig.*;
 public final class ConfigValidator {
 
     static ConfigData validate(ConfigData c) {
-        if (c.mechanics == null) {
-            c.mechanics = new Mechanics();
+        ConfigData defaults = new ConfigData();
+        try {
+            for (String name : ConfigRanges.SECTIONS) {
+                Field holder = ConfigData.class.getField(name);
+                if (holder.get(c) == null) {
+                    holder.set(c, holder.get(defaults));
+                }
+                Object t = holder.get(c);
+                for (Field f : t.getClass().getFields()) {
+                    double[] r = ConfigRanges.of(name, f.getName());
+                    if (r == null) {
+                        continue;
+                    }
+                    String path = name + "." + f.getName();
+                    if (f.getType() == int.class) {
+                        f.setInt(t, (int) clamp(path, f.getInt(t), r[0], r[1]));
+                    } else if (f.getType() == double.class) {
+                        f.setDouble(t, clamp(path, f.getDouble(t), r[0], r[1]));
+                    }
+                }
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
         }
-        if (c.wall_jump == null) {
-            c.wall_jump = new WallJump();
-        }
-        if (c.enchantments == null) {
-            c.enchantments = new Enchantments();
-        }
-        if (c.climbing == null) {
-            c.climbing = new Climbing();
-        }
-        if (c.traverse == null) {
-            c.traverse = new Traverse();
-        }
-        if (c.launch == null) {
-            c.launch = new Launch();
-        }
-        if (c.effects == null) {
-            c.effects = new Effects();
-        }
+        c.hud.low_threshold = clamp("hud.low_threshold", c.hud.low_threshold, 0.0, c.hud.mid_threshold);
         if (c.block_grip == null) {
             c.block_grip = new LinkedHashMap<>();
         }
         if (c.pickaxes == null) {
-            c.pickaxes = new ConfigData().pickaxes;
+            c.pickaxes = defaults.pickaxes;
         }
         if (c.block_overrides == null) {
             c.block_overrides = new LinkedHashMap<>();
         }
-
-        c.mechanics.reach = clamp("mechanics.reach", c.mechanics.reach, 0.5, 32.0);
-        c.mechanics.slip_cooldown = clamp("mechanics.slip_cooldown", c.mechanics.slip_cooldown, 0.0, 600.0);
-        c.mechanics.soft_fall_damage = clamp("mechanics.soft_fall_damage", c.mechanics.soft_fall_damage, 0.0, 1.0);
-        c.mechanics.soft_fall_damage_cap = clamp("mechanics.soft_fall_damage_cap", c.mechanics.soft_fall_damage_cap, 0.0, 40.0);
-        c.mechanics.trail_length = (int) clamp("mechanics.trail_length", c.mechanics.trail_length, 0, 16);
-        c.mechanics.min_fall_distance = clamp("mechanics.min_fall_distance", c.mechanics.min_fall_distance, 0.0, 32.0);
-        c.mechanics.max_drift = clamp("mechanics.max_drift", c.mechanics.max_drift, 0.0, 16.0);
-        c.mechanics.dual_grip_multiplier = clamp("mechanics.dual_grip_multiplier", c.mechanics.dual_grip_multiplier, 1.0, 10.0);
-        c.mechanics.release_cooldown = clamp("mechanics.release_cooldown", c.mechanics.release_cooldown, 0.0, 600.0);
-        c.mechanics.stamina_refill_time = clamp("mechanics.stamina_refill_time", c.mechanics.stamina_refill_time, 0.0, 120.0);
-        c.mechanics.stamina_refill_delay = clamp("mechanics.stamina_refill_delay", c.mechanics.stamina_refill_delay, 0.0, 30.0);
-        c.mechanics.stamina_climb_multiplier = clamp("mechanics.stamina_climb_multiplier", c.mechanics.stamina_climb_multiplier, 0.0, 10.0);
-        c.mechanics.stamina_shimmy_multiplier = clamp("mechanics.stamina_shimmy_multiplier", c.mechanics.stamina_shimmy_multiplier, 0.0, 10.0);
-        c.mechanics.stamina_hang_cost = clamp("mechanics.stamina_hang_cost", c.mechanics.stamina_hang_cost, 0.0, 100.0);
-        c.mechanics.soft_slide_ramp = clamp("mechanics.soft_slide_ramp", c.mechanics.soft_slide_ramp, 0.0, 1.0);
-
-        c.wall_jump.time_window = clamp("wall_jump.time_window", c.wall_jump.time_window, 0.05, 5.0);
-        c.wall_jump.forward_boost = clamp("wall_jump.forward_boost", c.wall_jump.forward_boost, 0.0, 5.0);
-        c.wall_jump.upward_boost = clamp("wall_jump.upward_boost", c.wall_jump.upward_boost, 0.0, 5.0);
-
-        c.climbing.speed = clamp("climbing.speed", c.climbing.speed, 0.01, 0.5);
-        c.climbing.reach = clamp("climbing.reach", c.climbing.reach, 0.5, 32.0);
-        c.climbing.durability_cost = (int) clamp("climbing.durability_cost", c.climbing.durability_cost, 0, 100);
-
-        c.traverse.speed = clamp("traverse.speed", c.traverse.speed, 0.01, 0.3);
-        c.traverse.durability_cost = (int) clamp("traverse.durability_cost", c.traverse.durability_cost, 0, 100);
-        c.launch.assist_speed = clamp("launch.assist_speed", c.launch.assist_speed, 0.0, 0.5);
-        c.effects.volume = clamp("effects.volume", c.effects.volume, 0.0, 2.0);
-        c.hud.show_below = clamp("hud.show_below", c.hud.show_below, 0.0, 1.0);
-        c.hud.offset_x = (int) clamp("hud.offset_x", c.hud.offset_x, -400, 400);
-        c.hud.offset_y = (int) clamp("hud.offset_y", c.hud.offset_y, -400, 400);
-        c.hud.scale = (int) clamp("hud.scale", c.hud.scale, 1, 4);
-        c.hud.opacity = clamp("hud.opacity", c.hud.opacity, 0.1, 1.0);
-        c.hud.hold_time = clamp("hud.hold_time", c.hud.hold_time, 0.0, 10.0);
-        c.hud.mid_threshold = clamp("hud.mid_threshold", c.hud.mid_threshold, 0.0, 1.0);
-        c.hud.low_threshold = clamp("hud.low_threshold", c.hud.low_threshold, 0.0, c.hud.mid_threshold);
-        c.launch.charge_time = clamp("launch.charge_time", c.launch.charge_time, 0.0, 5.0);
-        c.launch.upward_boost = clamp("launch.upward_boost", c.launch.upward_boost, 0.1, 2.0);
-        c.launch.max_cap_height = (int) clamp("launch.max_cap_height", c.launch.max_cap_height, 1, 4);
-        c.enchantments.spring_bonus = clamp("enchantments.spring_bonus", c.enchantments.spring_bonus, 0.0, 2.0);
-        c.enchantments.spring_cap_bonus = (int) clamp("enchantments.spring_cap_bonus", c.enchantments.spring_cap_bonus, 0, 4);
-        c.enchantments.traverse_bonus = clamp("enchantments.traverse_bonus", c.enchantments.traverse_bonus, 0.0, 5.0);
         c.block_grip.replaceAll((k, v) -> clamp("block_grip." + k, v, 0.0, 10.0));
-        c.enchantments.grip_bonus = clamp("enchantments.grip_bonus", c.enchantments.grip_bonus, 0.0, 60.0);
-        c.enchantments.momentum_reduction = clamp("enchantments.momentum_reduction", c.enchantments.momentum_reduction, 0.0, 60.0);
 
         Iterator<Map.Entry<String, PickaxeStats>> it = c.pickaxes.entrySet().iterator();
         while (it.hasNext()) {
