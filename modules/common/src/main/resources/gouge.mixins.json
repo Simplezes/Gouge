@@ -9,6 +9,9 @@
     "GougeFallDamageMixin",
     "GougePlayerTickMixin"
   ],
+  "client": [
+    "GougeHudMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

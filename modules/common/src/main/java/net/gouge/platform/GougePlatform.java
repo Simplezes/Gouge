@@ -1,5 +1,6 @@
 package net.gouge.platform;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -25,6 +26,9 @@ public interface GougePlatform {
     }
 
     default void spendStamina(Player player, double fractionOfMax) {
+    }
+
+    default void sendStamina(ServerPlayer player, float level) {
     }
 
     static void set(GougePlatform platform) {

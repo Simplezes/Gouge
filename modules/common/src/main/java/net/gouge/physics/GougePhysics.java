@@ -1,5 +1,6 @@
 package net.gouge.physics;
 
+import net.gouge.config.ConfigData;
 import net.gouge.config.GougeConfig;
 import net.gouge.platform.GougePlatform;
 import net.minecraft.core.BlockPos;
@@ -134,12 +135,61 @@ public final class GougePhysics {
         return p * (1.0 + 9.0 * p * p);
     }
 
+    public static double refillSeconds() {
+        ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
+        return GougeConfig.INSTANCE.experimental.persistent_stamina ? m.stamina_refill_time : 0.0;
+    }
+
+    public static double drainRate(int mode) {
+        ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
+        double base = mode == 1 ? m.stamina_climb_multiplier : mode == 2 ? m.stamina_shimmy_multiplier : 1.0;
+        if (!GougeConfig.INSTANCE.experimental.persistent_stamina) {
+            return base;
+        }
+        return base * staminaCurve(m.stamina_hang_cost) / staminaCurve(12.0);
+    }
+
     public static boolean modStamina() {
         return GougeConfig.INSTANCE.mechanics.use_mod_stamina && GougePlatform.get().hasModStamina();
     }
 
+    private static void putPool(ServerPlayer player, UUID id, float value) {
+        pools.put(id, value);
+        float last = sentPools.getOrDefault(id, 1f);
+        boolean edge = (value <= 0f || value >= 1f) && value != last;
+        boolean moved = Math.abs(value - last) >= POOL_SYNC_STEP && player.tickCount - sentAt.getOrDefault(id, 0) >= 2;
+        if (edge || moved) {
+            sentPools.put(id, value);
+            sentAt.put(id, player.tickCount);
+            if (GougeConfig.INSTANCE.experimental.persistent_stamina) {
+                GougePlatform.get().sendStamina(player, value);
+            }
+        }
+    }
+
+    private static void refillPool(ServerPlayer player, UUID id) {
+        if (player.tickCount == 0) {
+            pools.remove(id);
+            sentPools.remove(id);
+        }
+        Float cur = pools.get(id);
+        if (cur == null || cur >= 1f) {
+            return;
+        }
+        int[] d = hangData.get(id);
+        if ((d != null && d[0] != -1) || modStamina()) {
+            return;
+        }
+        double delay = GougeConfig.INSTANCE.mechanics.stamina_refill_delay * 20.0;
+        if (delay > 0 && refillSeconds() > 0 && serverTick(player) - drainedAt.getOrDefault(id, -1_000_000) < delay) {
+            return;
+        }
+        putPool(player, id, StaminaPool.refill(cur, refillSeconds()));
+    }
+
     public static void checkStale(ServerPlayer player) {
         UUID id = player.getUUID();
+        refillPool(player, id);
         int[] assist = launchAssist.get(id);
         if (assist != null) {
             if (grounded(player) || --assist[0] <= 0) {
@@ -343,25 +393,29 @@ public final class GougePhysics {
             if (Math.abs(effVy) < lockLimit) {
                 slideVy.remove(uid);
                 player.fallDistance = 0.0F;
+                boolean timed = !modStamina() && !GougeConfig.INSTANCE.mechanics.unlimited_grip;
+                float left = pools.getOrDefault(uid, 1f);
                 if (d[0] == -1) {
                     d[5] = now;
                     climbPins.put(player.getUUID(), new ClimbPin(now, pos, dir));
                     d[7] = Math.max(1, (int) Math.round(singlePickaxeHangTicks(useItem) * blockGripMultiplier(state)));
-                    boolean isDual = isDualGripActive(player);
-                    d[6] = isDual ? 1 : 0;
-                    int hangTicks = d[7];
-                    if (isDual) {
-                        hangTicks = (int) Math.round(hangTicks * GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
-                    }
-                    d[0] = now + Math.max(1, hangTicks);
-                } else if (d[6] == 1 && !isDualGripActive(player)) {
-                    d[6] = 0;
-                    d[0] = d[5] + d[7];
+                    d[0] = now + d[7];
+                    drainedAt.put(uid, now);
                 }
-
+                if (timed) {
+                    double total = StaminaPool.total(d[7], isDualGripActive(player),
+                            GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
+                    int elapsed = now - drainedAt.getOrDefault(uid, now);
+                    if (elapsed > 0) {
+                        left = Math.max(0f, left - (float) (elapsed * drainRate(gripMode(player)) / total));
+                        drainedAt.put(uid, now);
+                    }
+                    putPool(player, uid, left);
+                    d[0] = now + (int) Math.round(left * total);
+                }
                 boolean gripSpent = modStamina()
                         ? GougePlatform.get().staminaExhausted(player)
-                        : !GougeConfig.INSTANCE.mechanics.unlimited_grip && now >= d[0];
+                        : timed && left <= 0f;
                 if (gripSpent) {
                     startCooldown(player, d);
                     spawnSlip(world, hit.getLocation());

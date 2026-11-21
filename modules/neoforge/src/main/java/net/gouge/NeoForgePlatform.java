@@ -1,7 +1,9 @@
 package net.gouge;
 
 import net.gouge.platform.GougePlatform;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
@@ -41,6 +43,13 @@ public final class NeoForgePlatform implements GougePlatform {
     public void spendStamina(Player player, double fractionOfMax) {
         if (parcool && !paraglider) {
             net.gouge.extern.parcool.ParCoolStamina.spend(player, fractionOfMax);
+        }
+    }
+
+    @Override
+    public void sendStamina(ServerPlayer player, float level) {
+        if (player.connection.hasChannel(StaminaPayload.TYPE)) {
+            PacketDistributor.sendToPlayer(player, new StaminaPayload(level));
         }
     }
 
