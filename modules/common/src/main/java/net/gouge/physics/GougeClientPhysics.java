@@ -54,16 +54,16 @@ public final class GougeClientPhysics {
     }
 
     public static boolean isHanging() {
-        return gripStart >= 0 || predicting && !GougeConfig.INSTANCE.mechanics.client_prediction;
+        return gripStart >= 0 || predicting && !GougeConfig.INSTANCE.grip.client_prediction;
     }
 
     private static double gripTotal(LocalPlayer local) {
-        return StaminaPool.total(gripBase, Pickaxes.isDualGripActive(local), GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
+        return StaminaPool.total(gripBase, Pickaxes.isDualGripActive(local), GougeConfig.INSTANCE.grip.dual_multiplier);
     }
 
     public static float staminaLevel(float partialTick) {
         LocalPlayer local = Minecraft.getInstance().player;
-        if (local == null || !GougeConfig.INSTANCE.experimental.persistent_stamina || GougePhysics.modStamina() || GougeConfig.INSTANCE.mechanics.unlimited_grip) {
+        if (local == null || !GougeConfig.INSTANCE.stamina.enabled || GougePhysics.modStamina() || GougeConfig.INSTANCE.grip.unlimited) {
             return -1f;
         }
         if (gripStart < 0) {
@@ -93,7 +93,7 @@ public final class GougeClientPhysics {
                 stamina = StaminaPool.level(stamina, gripRate, gripTotal(local));
             }
         } else if (stamina < 1f && !isHanging() && !GougePhysics.modStamina()
-                && local.tickCount - lastHangTick >= GougeConfig.INSTANCE.mechanics.stamina_refill_delay * 20.0) {
+                && local.tickCount - lastHangTick >= GougeConfig.INSTANCE.stamina.refill_delay * 20.0) {
             stamina = StaminaPool.refill(stamina, GougePhysics.refillSeconds());
         }
     }
@@ -127,7 +127,7 @@ public final class GougeClientPhysics {
             stop(local);
             return;
         }
-        if (!predicting && !WallRaycast.hasFallClearance(local.level(), local, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
+        if (!predicting && !WallRaycast.hasFallClearance(local.level(), local, GougeConfig.INSTANCE.grip.min_fall_distance)) {
             stop(local);
             return;
         }
@@ -159,7 +159,7 @@ public final class GougeClientPhysics {
             return;
         }
 
-        double maxDrift = GougeConfig.INSTANCE.mechanics.max_drift;
+        double maxDrift = GougeConfig.INSTANCE.grip.max_drift;
         if (predicting && anchor != null && maxDrift > 0) {
             double dx = local.getX() - anchor.x;
             double dz = local.getZ() - anchor.z;
@@ -172,8 +172,8 @@ public final class GougeClientPhysics {
         BlockHitResult hit = WallRaycast.raycast(local.level(), local);
         boolean climbOk = GougeConfig.INSTANCE.climbing.enabled
                 && (!GougeConfig.INSTANCE.climbing.requires_dual || Pickaxes.isDualGripActive(local));
-        boolean shimmy = GougeConfig.INSTANCE.traverse.enabled
-                && (!GougeConfig.INSTANCE.traverse.requires_dual || Pickaxes.isDualGripActive(local))
+        boolean shimmy = GougeConfig.INSTANCE.shimmy.enabled
+                && (!GougeConfig.INSTANCE.shimmy.requires_dual || Pickaxes.isDualGripActive(local))
                 && mc.options.keyLeft.isDown() != mc.options.keyRight.isDown()
                 && !(climbOk && mc.options.keyJump.isDown());
         if (predicting && pin != null && pinDir != null && ((mc.options.keyJump.isDown() && climbOk) || shimmy)) {
@@ -200,11 +200,11 @@ public final class GougeClientPhysics {
                 return;
             }
             if (predicting && BlockRules.isHardBlock(state)) {
-                ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-                GougePlatform.get().spendStamina(local, GougePhysics.staminaCurve(m.stamina_hang_cost) / 20.0);
+                ConfigData.Stamina s = GougeConfig.INSTANCE.stamina;
+                GougePlatform.get().spendStamina(local, GougePhysics.staminaCurve(s.hang_cost) / 20.0);
             }
         }
-        if (!GougeConfig.INSTANCE.mechanics.client_prediction) {
+        if (!GougeConfig.INSTANCE.grip.client_prediction) {
             start(local);
             return;
         }

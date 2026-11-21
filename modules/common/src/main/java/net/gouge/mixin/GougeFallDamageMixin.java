@@ -21,7 +21,7 @@ public abstract class GougeFallDamageMixin {
         float multiplier = GripState.fallDamageMultiplier(player.getUUID());
         if (multiplier != 1.0f) {
             int damage = Math.round(cir.getReturnValue() * multiplier);
-            double cap = GougeConfig.INSTANCE.mechanics.soft_fall_damage_cap;
+            double cap = GougeConfig.INSTANCE.slide.fall_damage_cap;
             if (cap > 0) {
                 damage = (int) Math.min(damage, cap);
             }
