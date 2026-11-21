@@ -1,7 +1,7 @@
 package net.gouge;
 
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -13,6 +13,8 @@ import java.util.Optional;
 final class ButtonEntry extends AbstractConfigListEntry<Object> {
 
     private final Button button;
+    private GuiEventListener focus;
+    private boolean dragging;
 
     ButtonEntry(Component label, Component text, Runnable action) {
         super(label, true);
@@ -40,12 +42,35 @@ final class ButtonEntry extends AbstractConfigListEntry<Object> {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int index, int y, int x, int entryWidth, int entryHeight,
+    public void render(GuiGraphics g, int index, int y, int x, int entryWidth, int entryHeight,
                                    int mouseX, int mouseY, boolean hovered, float delta) {
-        super.extractRenderState(g, index, y, x, entryWidth, entryHeight, mouseX, mouseY, hovered, delta);
+        super.render(g, index, y, x, entryWidth, entryHeight, mouseX, mouseY, hovered, delta);
         button.setWidth(Math.min(240, entryWidth - 20));
         button.setX(x + (entryWidth - button.getWidth()) / 2);
         button.setY(y + 2);
-        button.extractRenderState(g, mouseX, mouseY, delta);
+        button.render(g, mouseX, mouseY, delta);
+    }
+
+    public void setFocused(GuiEventListener listener) {
+        focus = listener;
+    }
+
+    public GuiEventListener getFocused() {
+        return focus;
+    }
+
+    public boolean isDragging() {
+        return dragging;
+    }
+
+    public void setDragging(boolean value) {
+        dragging = value;
+    }
+
+    public NarratableEntry.NarrationPriority narrationPriority() {
+        return NarratableEntry.NarrationPriority.NONE;
+    }
+
+    public void updateNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
     }
 }

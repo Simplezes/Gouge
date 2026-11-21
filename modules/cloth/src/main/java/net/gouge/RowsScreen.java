@@ -1,15 +1,13 @@
 package net.gouge;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 
@@ -26,7 +24,7 @@ public final class RowsScreen extends Screen {
     public record Spec(String title, String hint, String[] labels, boolean kindColumn, String[] blank, boolean blocks) {
     }
 
-    private record Info(Component name, boolean ok, ItemStack stack, String glyph, Identifier texture) {
+    private record Info(Component name, boolean ok, ItemStack stack, String glyph, ResourceLocation texture) {
     }
 
     private static final Pattern ID = Pattern.compile("fallback|#?[a-z0-9_.-]+:[a-z0-9_./-]+");
@@ -60,6 +58,8 @@ public final class RowsScreen extends Screen {
     private int suggestTop;
     private String suggestQuery = "";
     private boolean draggingScroll;
+    private int lastMx;
+    private int lastMy;
 
     public RowsScreen(Screen parent, Spec spec, List<String[]> rows, Consumer<List<String[]>> onDone) {
         super(Component.literal(spec.title()));
@@ -196,14 +196,14 @@ public final class RowsScreen extends Screen {
         next.active = page < pages - 1;
         addRenderableWidget(Button.builder(Component.literal("Done"), b -> {
             onDone.accept(rows);
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }).bounds(cx - 155, height - 30, 150, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose()).bounds(cx + 5, height - 30, 150, 20).build());
     }
 
     @Override
     public void onClose() {
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 
     private EditBox focusedId() {
@@ -256,48 +256,48 @@ public final class RowsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
         if (draggingScroll) {
-            scrollTo(event.y());
+            scrollTo(my);
             return true;
         }
-        return super.mouseDragged(event, dx, dy);
+        return super.mouseDragged(mx, my, button, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
+    public boolean mouseReleased(double mx, double my, int button) {
         if (draggingScroll) {
             draggingScroll = false;
             return true;
         }
-        return super.mouseReleased(event);
+        return super.mouseReleased(mx, my, button);
     }
 
     @Override
-    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double x, double y, double scrollY) {
         if (overDropdown(x, y) || (suggestBox != null && !suggestions.isEmpty() && suggestBox.isMouseOver(x, y))) {
             suggestOffset = Math.max(0, Math.min(maxOffset(), suggestOffset - (int) Math.signum(scrollY)));
             return true;
         }
-        return super.mouseScrolled(x, y, scrollX, scrollY);
+        return super.mouseScrolled(x, y, scrollY);
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (overDropdown(event.x(), event.y())) {
-            if (suggestions.size() > SUGGEST_ROWS && event.x() >= suggestBox.getX() + SUGGEST_W - 9) {
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (overDropdown(mx, my)) {
+            if (suggestions.size() > SUGGEST_ROWS && mx >= suggestBox.getX() + SUGGEST_W - 9) {
                 draggingScroll = true;
-                scrollTo(event.y());
+                scrollTo(my);
                 return true;
             }
-            int idx = suggestOffset + (int) ((event.y() - suggestTop - 1) / SUGGEST_H);
+            int idx = suggestOffset + (int) ((my - suggestTop - 1) / SUGGEST_H);
             if (idx >= 0 && idx < suggestions.size()) {
                 suggestBox.setValue(suggestions.get(idx));
                 suggestions = List.of();
                 return true;
             }
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mx, my, button);
     }
 
     private Info info(String raw) {
@@ -315,23 +315,23 @@ public final class RowsScreen extends Screen {
         if (id.startsWith("#")) {
             return new Info(Component.literal("Tag (everything in it)").withStyle(ChatFormatting.GRAY), true, null, "#", null);
         }
-        Identifier key = valid(id) ? Identifier.tryParse(id) : null;
+        ResourceLocation key = valid(id) ? ResourceLocation.tryParse(id) : null;
         String kind = spec.blocks() ? "block" : "item";
         if (key != null && spec.blocks() && BuiltInRegistries.BLOCK.containsKey(key)) {
-            var block = BuiltInRegistries.BLOCK.getValue(key);
+            var block = BuiltInRegistries.BLOCK.get(key);
             ItemStack st = stack(block.asItem());
             return new Info(Component.translatable(block.getDescriptionId()).withStyle(ChatFormatting.GREEN), true, st, "", st == null ? texture(key, "block") : null);
         }
         if (key != null && !spec.blocks() && BuiltInRegistries.ITEM.containsKey(key)) {
-            var item = BuiltInRegistries.ITEM.getValue(key);
+            var item = BuiltInRegistries.ITEM.get(key);
             ItemStack st = stack(item);
             return new Info(Component.translatable(item.getDescriptionId()).withStyle(ChatFormatting.GREEN), true, st, "", st == null ? texture(key, "item") : null);
         }
         return new Info(Component.literal("Unknown " + kind + " (ignored in game)").withStyle(ChatFormatting.RED), false, null, "?", null);
     }
 
-    private Identifier texture(Identifier key, String folder) {
-        Identifier tex = Identifier.tryParse(key.getNamespace() + ":textures/" + folder + "/" + key.getPath() + ".png");
+    private ResourceLocation texture(ResourceLocation key, String folder) {
+        ResourceLocation tex = ResourceLocation.tryParse(key.getNamespace() + ":textures/" + folder + "/" + key.getPath() + ".png");
         return tex != null && minecraft.getResourceManager().getResource(tex).isPresent() ? tex : null;
     }
 
@@ -344,27 +344,29 @@ public final class RowsScreen extends Screen {
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        super.extractBackground(g, mouseX, mouseY, delta);
+    public void renderBackground(GuiGraphics g) {
+        super.renderBackground(g);
+        int mouseX = lastMx;
+        int mouseY = lastMy;
         int pw = panelWidth();
         int px = (width - pw) / 2;
         g.fill(px, 6, px + pw, height - 6, PANEL);
-        g.outline(px, 6, pw, height - 12, PANEL_LINE);
+        g.renderOutline(px, 6, pw, height - 12, PANEL_LINE);
 
-        g.centeredText(font, title, width / 2, 14, 0xFFFFD36B);
+        g.drawCenteredString(font, title, width / 2, 14, 0xFFFFD36B);
         int hy = 28;
         for (FormattedCharSequence line : hintLines()) {
-            g.text(font, line, (width - font.width(line)) / 2, hy, 0xFFA0A0A8);
+            g.drawString(font, line, (width - font.width(line)) / 2, hy, 0xFFA0A0A8);
             hy += 11;
         }
         g.fill(px + 12, hy + 4, px + pw - 12, hy + 5, PANEL_LINE);
 
         int left = cardLeft();
         int labelY = rowsTop() - 12;
-        g.text(font, spec.labels()[0], left + 38, labelY, ACCENT);
+        g.drawString(font, spec.labels()[0], left + 38, labelY, ACCENT);
         int lx = left + 36 + ID_W + 6;
         for (int c = 1; c < spec.labels().length; c++) {
-            g.text(font, spec.labels()[c], lx + 2, labelY, ACCENT);
+            g.drawString(font, spec.labels()[c], lx + 2, labelY, ACCENT);
             lx += (c == 1 && spec.kindColumn() ? KIND_W : VAL_W) + 6;
         }
 
@@ -372,32 +374,35 @@ public final class RowsScreen extends Screen {
         for (String[] row : shown) {
             boolean hover = mouseX >= left && mouseX < left + cardWidth() && mouseY >= cardY && mouseY < cardY + CARD_H;
             g.fill(left, cardY, left + cardWidth(), cardY + CARD_H, hover ? 0xFF22222B : CARD);
-            g.outline(left, cardY, cardWidth(), CARD_H, hover ? ACCENT : CARD_LINE);
+            g.renderOutline(left, cardY, cardWidth(), CARD_H, hover ? ACCENT : CARD_LINE);
             Info info = info(row[0]);
             g.fill(left + 6, cardY + 8, left + 30, cardY + 32, 0xFF0B0B0E);
-            g.outline(left + 6, cardY + 8, 24, 24, info.ok() ? 0xFF5A5A66 : 0xFF70404A);
+            g.renderOutline(left + 6, cardY + 8, 24, 24, info.ok() ? 0xFF5A5A66 : 0xFF70404A);
             if (info.stack() != null) {
-                g.item(info.stack(), left + 10, cardY + 12);
+                g.renderItem(info.stack(), left + 10, cardY + 12);
             } else if (info.texture() != null) {
-                g.blit(RenderPipelines.GUI_TEXTURED, info.texture(), left + 10, cardY + 12, 0f, 0f, 16, 16, 16, 16);
+                g.blit(info.texture(), left + 10, cardY + 12, 0f, 0f, 16, 16, 16, 16);
             } else {
                 String glyph = info.glyph().isEmpty() ? "?" : info.glyph();
-                g.centeredText(font, glyph, left + 18, cardY + 16, info.ok() ? 0xFFB0B0B8 : 0xFFFF7070);
+                g.drawCenteredString(font, glyph, left + 18, cardY + 16, info.ok() ? 0xFFB0B0B8 : 0xFFFF7070);
             }
-            g.text(font, info.name(), left + 38, cardY + 30, 0xFFFFFFFF);
+            g.drawString(font, info.name(), left + 38, cardY + 30, 0xFFFFFFFF);
             cardY += ROW;
         }
 
         int footer = height - 62;
         g.fill(px + 12, footer, px + pw - 12, footer + 1, PANEL_LINE);
         int pages = Math.max(1, (rows.size() + perPage() - 1) / perPage());
-        g.centeredText(font, "Page " + (page + 1) + " / " + pages + "   " + rows.size() + (rows.size() == 1 ? " entry" : " entries"),
+        g.drawCenteredString(font, "Page " + (page + 1) + " / " + pages + "   " + rows.size() + (rows.size() == 1 ? " entry" : " entries"),
                 width / 2, height - 50, 0xFFA0A0A8);
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(g, mouseX, mouseY, delta);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+        lastMx = mouseX;
+        lastMy = mouseY;
+        renderBackground(g);
+        super.render(g, mouseX, mouseY, delta);
         EditBox focused = focusedId();
         suggestBox = focused;
         suggestions = focused != null ? matches(focused.getValue()) : List.of();
@@ -417,9 +422,10 @@ public final class RowsScreen extends Screen {
             sy = focused.getY() - h - 2;
         }
         suggestTop = sy;
-        g.nextStratum();
+        g.pose().pushPose();
+        g.pose().translate(0f, 0f, 300f);
         g.fill(sx, sy, sx + SUGGEST_W, sy + h, 0xF0101014);
-        g.outline(sx, sy, SUGGEST_W, h, ACCENT);
+        g.renderOutline(sx, sy, SUGGEST_W, h, ACCENT);
         for (int i = 0; i < visible; i++) {
             String id = suggestions.get(suggestOffset + i);
             Info info = info(id);
@@ -429,14 +435,14 @@ public final class RowsScreen extends Screen {
                 g.fill(sx + 1, ly, sx + SUGGEST_W - 9, ly + SUGGEST_H, 0xFF3A3A46);
             }
             if (info.stack() != null) {
-                g.item(info.stack(), sx + 4, ly + 3);
+                g.renderItem(info.stack(), sx + 4, ly + 3);
             } else if (info.texture() != null) {
-                g.blit(RenderPipelines.GUI_TEXTURED, info.texture(), sx + 4, ly + 3, 0f, 0f, 16, 16, 16, 16);
+                g.blit(info.texture(), sx + 4, ly + 3, 0f, 0f, 16, 16, 16, 16);
             } else {
-                g.centeredText(font, "?", sx + 12, ly + 7, 0xFFB0B0B8);
+                g.drawCenteredString(font, "?", sx + 12, ly + 7, 0xFFB0B0B8);
             }
-            g.text(font, info.name(), sx + 26, ly + 3, 0xFFFFFFFF);
-            g.text(font, id, sx + 26, ly + 12, hover ? 0xFFFFFFA0 : 0xFF8A8A94);
+            g.drawString(font, info.name(), sx + 26, ly + 3, 0xFFFFFFFF);
+            g.drawString(font, id, sx + 26, ly + 12, hover ? 0xFFFFFFA0 : 0xFF8A8A94);
         }
         if (suggestions.size() > SUGGEST_ROWS) {
             int trackX = sx + SUGGEST_W - 7;
@@ -446,7 +452,8 @@ public final class RowsScreen extends Screen {
             int thumbH = Math.max(12, trackH * SUGGEST_ROWS / suggestions.size());
             int thumbY = trackY + (trackH - thumbH) * suggestOffset / maxOffset();
             g.fill(trackX, thumbY, trackX + 4, thumbY + thumbH, ACCENT);
-            g.text(font, suggestions.size() + " matches", sx + SUGGEST_W - 9 - font.width(suggestions.size() + " matches"), sy + h + 2, 0xFF8A8A94);
+            g.drawString(font, suggestions.size() + " matches", sx + SUGGEST_W - 9 - font.width(suggestions.size() + " matches"), sy + h + 2, 0xFF8A8A94);
         }
+        g.pose().popPose();
     }
 }
