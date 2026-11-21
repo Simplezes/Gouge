@@ -41,7 +41,7 @@ public final class Pickaxes {
     }
 
     public static boolean isDualGripActive(Player player) {
-        return GougeConfig.INSTANCE.mechanics.dual_grip_enabled && hasDualPickaxes(player);
+        return GougeConfig.INSTANCE.grip.dual_enabled && hasDualPickaxes(player);
     }
 
     public static int springLevel(ItemStack stack) {
@@ -129,7 +129,7 @@ public final class Pickaxes {
     public static int maxHangTicks(Player player, ItemStack stack) {
         int ticks = singlePickaxeHangTicks(stack);
         if (isDualGripActive(player)) {
-            ticks = (int) Math.round(ticks * GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
+            ticks = (int) Math.round(ticks * GougeConfig.INSTANCE.grip.dual_multiplier);
         }
         return Math.max(1, ticks);
     }

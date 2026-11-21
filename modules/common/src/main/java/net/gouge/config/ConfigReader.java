@@ -3,6 +3,7 @@ package net.gouge.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 import net.gouge.config.ConfigData.PickaxeStats;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,83 +30,60 @@ public final class ConfigReader {
         return (v instanceof Boolean b) ? b : def;
     }
 
+    private static final String[] LEGACY = {
+            "mechanics.reach=grip.reach", "mechanics.min_fall_distance=grip.min_fall_distance",
+            "mechanics.max_drift=grip.max_drift", "mechanics.slip_cooldown=grip.slip_cooldown",
+            "mechanics.release_cooldown=grip.release_cooldown", "mechanics.unlimited_grip=grip.unlimited",
+            "mechanics.cling_everything=grip.cling_everything", "mechanics.block_other_hand=grip.block_other_hand",
+            "mechanics.client_prediction=grip.client_prediction", "mechanics.dual_grip_enabled=grip.dual_enabled",
+            "mechanics.dual_grip_multiplier=grip.dual_multiplier", "mechanics.soft_fall_damage=slide.fall_damage",
+            "mechanics.soft_fall_damage_cap=slide.fall_damage_cap", "mechanics.trail_length=slide.trail_length",
+            "mechanics.soft_slide_ramp=slide.ramp", "experimental.persistent_stamina=stamina.enabled",
+            "mechanics.use_mod_stamina=stamina.use_mod", "mechanics.stamina_hang_cost=stamina.hang_cost",
+            "mechanics.stamina_climb_multiplier=stamina.climb_multiplier",
+            "mechanics.stamina_shimmy_multiplier=stamina.shimmy_multiplier",
+            "mechanics.stamina_refill_time=stamina.refill_time", "mechanics.stamina_refill_delay=stamina.refill_delay",
+            "traverse.enabled=shimmy.enabled", "traverse.requires_dual=shimmy.requires_dual",
+            "traverse.speed=shimmy.speed", "traverse.durability_cost=shimmy.durability_cost",
+            "enchantments.traverse_bonus=enchantments.shimmy_bonus"
+    };
+
+    static boolean migrate(CommentedConfig c) {
+        boolean found = false;
+        for (String pair : LEGACY) {
+            String[] p = pair.split("=");
+            if (c.contains(p[0])) {
+                found = true;
+                if (!c.contains(p[1])) {
+                    c.set(p[1], c.get(p[0]));
+                }
+            }
+        }
+        return found;
+    }
+
     static ConfigData read(CommentedConfig c) {
+        migrate(c);
         ConfigData d = new ConfigData();
-
-        d.mechanics.reach = num(c, "mechanics.reach", d.mechanics.reach);
-        d.mechanics.slip_cooldown = num(c, "mechanics.slip_cooldown", d.mechanics.slip_cooldown);
-        d.mechanics.soft_fall_damage = num(c, "mechanics.soft_fall_damage", d.mechanics.soft_fall_damage);
-        d.mechanics.soft_fall_damage_cap = num(c, "mechanics.soft_fall_damage_cap", d.mechanics.soft_fall_damage_cap);
-        d.mechanics.trail_length = inum(c, "mechanics.trail_length", d.mechanics.trail_length);
-        d.mechanics.client_prediction = bool(c, "mechanics.client_prediction", d.mechanics.client_prediction);
-        d.mechanics.min_fall_distance = num(c, "mechanics.min_fall_distance", d.mechanics.min_fall_distance);
-        d.mechanics.max_drift = num(c, "mechanics.max_drift", d.mechanics.max_drift);
-        d.mechanics.cling_everything = bool(c, "mechanics.cling_everything", d.mechanics.cling_everything);
-        d.mechanics.dual_grip_enabled = bool(c, "mechanics.dual_grip_enabled", d.mechanics.dual_grip_enabled);
-        d.mechanics.dual_grip_multiplier = num(c, "mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
-        d.mechanics.unlimited_grip = bool(c, "mechanics.unlimited_grip", d.mechanics.unlimited_grip);
-        d.experimental.persistent_stamina = bool(c, "experimental.persistent_stamina", d.experimental.persistent_stamina);
-        d.mechanics.stamina_refill_time = num(c, "mechanics.stamina_refill_time", d.mechanics.stamina_refill_time);
-        d.mechanics.stamina_refill_delay = num(c, "mechanics.stamina_refill_delay", d.mechanics.stamina_refill_delay);
-        d.mechanics.stamina_climb_multiplier = num(c, "mechanics.stamina_climb_multiplier", d.mechanics.stamina_climb_multiplier);
-        d.mechanics.stamina_shimmy_multiplier = num(c, "mechanics.stamina_shimmy_multiplier", d.mechanics.stamina_shimmy_multiplier);
-        d.mechanics.release_cooldown = num(c, "mechanics.release_cooldown", d.mechanics.release_cooldown);
-        d.mechanics.use_mod_stamina = bool(c, "mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
-        d.mechanics.stamina_hang_cost = num(c, "mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
-        d.mechanics.block_other_hand = bool(c, "mechanics.block_other_hand", d.mechanics.block_other_hand);
-        d.mechanics.soft_slide_ramp = num(c, "mechanics.soft_slide_ramp", d.mechanics.soft_slide_ramp);
-
-        d.wall_jump.time_window = num(c, "wall_jump.time_window", d.wall_jump.time_window);
-        d.wall_jump.forward_boost = num(c, "wall_jump.forward_boost", d.wall_jump.forward_boost);
-        d.wall_jump.upward_boost = num(c, "wall_jump.upward_boost", d.wall_jump.upward_boost);
-
-        d.climbing.enabled = bool(c, "climbing.enabled", d.climbing.enabled);
-        d.climbing.requires_dual = bool(c, "climbing.requires_dual", d.climbing.requires_dual);
-        d.climbing.speed = num(c, "climbing.speed", d.climbing.speed);
-        d.climbing.reach = num(c, "climbing.reach", d.climbing.reach);
-        d.climbing.allow_diagonal = bool(c, "climbing.allow_diagonal", d.climbing.allow_diagonal);
-        d.climbing.durability_cost = inum(c, "climbing.durability_cost", d.climbing.durability_cost);
-        d.climbing.damage_both_tools = bool(c, "climbing.damage_both_tools", d.climbing.damage_both_tools);
-        d.climbing.stop_at_soft_block = bool(c, "climbing.stop_at_soft_block", d.climbing.stop_at_soft_block);
-
-        d.traverse.enabled = bool(c, "traverse.enabled", d.traverse.enabled);
-        d.traverse.requires_dual = bool(c, "traverse.requires_dual", d.traverse.requires_dual);
-        d.traverse.speed = num(c, "traverse.speed", d.traverse.speed);
-        d.traverse.durability_cost = inum(c, "traverse.durability_cost", d.traverse.durability_cost);
-
-        d.launch.enabled = bool(c, "launch.enabled", d.launch.enabled);
-        d.launch.charge_time = num(c, "launch.charge_time", d.launch.charge_time);
-        d.launch.upward_boost = num(c, "launch.upward_boost", d.launch.upward_boost);
-        d.launch.max_cap_height = inum(c, "launch.max_cap_height", d.launch.max_cap_height);
-        d.launch.auto_height = bool(c, "launch.auto_height", d.launch.auto_height);
-        d.launch.assist_speed = num(c, "launch.assist_speed", d.launch.assist_speed);
-
-        d.effects.particles = bool(c, "effects.particles", d.effects.particles);
-        d.effects.sounds = bool(c, "effects.sounds", d.effects.sounds);
-        d.effects.volume = num(c, "effects.volume", d.effects.volume);
-
-        d.hud.enabled = bool(c, "hud.enabled", d.hud.enabled);
-        d.hud.show_below = num(c, "hud.show_below", d.hud.show_below);
-        d.hud.left_side = bool(c, "hud.left_side", d.hud.left_side);
-        d.hud.offset_x = inum(c, "hud.offset_x", d.hud.offset_x);
-        d.hud.offset_y = inum(c, "hud.offset_y", d.hud.offset_y);
-        d.hud.scale = inum(c, "hud.scale", d.hud.scale);
-        d.hud.opacity = num(c, "hud.opacity", d.hud.opacity);
-        d.hud.show_pips = bool(c, "hud.show_pips", d.hud.show_pips);
-        d.hud.show_rings = bool(c, "hud.show_rings", d.hud.show_rings);
-        d.hud.blink_when_low = bool(c, "hud.blink_when_low", d.hud.blink_when_low);
-        d.hud.hold_time = num(c, "hud.hold_time", d.hud.hold_time);
-        d.hud.mid_threshold = num(c, "hud.mid_threshold", d.hud.mid_threshold);
-        d.hud.low_threshold = num(c, "hud.low_threshold", d.hud.low_threshold);
-        d.hud.high_color = str(c, "hud.high_color", d.hud.high_color);
-        d.hud.mid_color = str(c, "hud.mid_color", d.hud.mid_color);
-        d.hud.low_color = str(c, "hud.low_color", d.hud.low_color);
-
-        d.enchantments.spring_bonus = num(c, "enchantments.spring_bonus", d.enchantments.spring_bonus);
-        d.enchantments.spring_cap_bonus = inum(c, "enchantments.spring_cap_bonus", d.enchantments.spring_cap_bonus);
-        d.enchantments.traverse_bonus = num(c, "enchantments.traverse_bonus", d.enchantments.traverse_bonus);
-        d.enchantments.grip_bonus = num(c, "enchantments.grip_bonus", d.enchantments.grip_bonus);
-        d.enchantments.momentum_reduction = num(c, "enchantments.momentum_reduction", d.enchantments.momentum_reduction);
+        for (String name : ConfigRanges.SECTIONS) {
+            Object t = ConfigRanges.section(d, name);
+            for (Field f : t.getClass().getFields()) {
+                String path = name + "." + f.getName();
+                try {
+                    if (f.getType() == boolean.class) {
+                        f.setBoolean(t, bool(c, path, f.getBoolean(t)));
+                    } else if (f.getType() == int.class) {
+                        f.setInt(t, inum(c, path, f.getInt(t)));
+                    } else if (f.getType() == double.class) {
+                        f.setDouble(t, num(c, path, f.getDouble(t)));
+                    } else if (f.getType() == String.class) {
+                        f.set(t, str(c, path, (String) f.get(t)));
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
 
         Object pickaxesRaw = c.get(List.of("pickaxes"));
         if (pickaxesRaw instanceof CommentedConfig pickaxes) {

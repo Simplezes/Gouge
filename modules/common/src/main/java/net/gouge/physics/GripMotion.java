@@ -29,7 +29,7 @@ public final class GripMotion {
     public static final int LAUNCH_ASSIST_TICKS = 26;
 
     public static double softSlideVy(double vy, double slideSpeed) {
-        double ramp = GougeConfig.INSTANCE.mechanics.soft_slide_ramp;
+        double ramp = GougeConfig.INSTANCE.slide.ramp;
         return ramp <= 0 ? -slideSpeed : Math.max(vy - ramp, -slideSpeed);
     }
 
@@ -72,8 +72,8 @@ public final class GripMotion {
     }
 
     public static Vec3 traverseDelta(Player player, Direction face, float leftIntent, ItemStack stack) {
-        double speed = GougeConfig.INSTANCE.traverse.speed
-                * (1.0 + enchLevel(stack, GougeEnchantments.SHIMMY) * GougeConfig.INSTANCE.enchantments.traverse_bonus);
+        double speed = GougeConfig.INSTANCE.shimmy.speed
+                * (1.0 + enchLevel(stack, GougeEnchantments.SHIMMY) * GougeConfig.INSTANCE.enchantments.shimmy_bonus);
         return new Vec3(-face.getStepZ() * leftIntent * speed, 0, face.getStepX() * leftIntent * speed);
     }
 

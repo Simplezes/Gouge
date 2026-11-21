@@ -20,7 +20,7 @@ public final class GougeParagliderPlugin implements MovementPlugin {
 
     @Override
     public void registerNewStates(PlayerStateRegister register) {
-        double cost = GougeConfig.INSTANCE.mechanics.stamina_hang_cost;
+        double cost = GougeConfig.INSTANCE.stamina.hang_cost;
         grip = Identifier.fromNamespaceAndPath("gouge", "grip_" + Math.round(cost * 100));
         register.register(grip, delta(cost));
     }

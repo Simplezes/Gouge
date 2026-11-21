@@ -38,7 +38,7 @@ public final class BlockRules {
         if (override != null) {
             return override.equals("hard");
         }
-        if (GougeConfig.INSTANCE.mechanics.cling_everything) {
+        if (GougeConfig.INSTANCE.grip.cling_everything) {
             return true;
         }
         if (!id.getNamespace().equals("minecraft")) {
