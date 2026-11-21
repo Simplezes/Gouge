@@ -4,6 +4,8 @@ import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.api.Requirement;
+import me.shedaniel.clothconfig2.gui.entries.BooleanListEntry;
 import me.shedaniel.clothconfig2.impl.builders.ColorFieldBuilder;
 import net.gouge.config.ConfigData;
 import net.gouge.config.ConfigData.PickaxeStats;
@@ -27,6 +29,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class GougeConfigScreen {
+    private BooleanListEntry staminaToggle;
+    private BooleanListEntry hudToggle;
 
     private static final Map<String, List<String>> TABS = new LinkedHashMap<>();
     private static final Map<String, String> TAB_INFO = new LinkedHashMap<>();
@@ -95,6 +99,13 @@ public final class GougeConfigScreen {
             title = next;
             try {
                 AbstractConfigListEntry entry = entry(name, f, target, defaults);
+                if (entry instanceof BooleanListEntry toggle && f.getName().equals("enabled")) {
+                    if (name.equals("stamina")) {
+                        staminaToggle = toggle;
+                    } else if (name.equals("hud")) {
+                        hudToggle = toggle;
+                    }
+                }
                 if (entry != null) {
                     pending.add(entry);
                 }
@@ -116,10 +127,12 @@ public final class GougeConfigScreen {
         Component tip = Component.literal(ConfigDocs.describe(section, f, defaults));
         String unit = ConfigDocs.unit(section, f.getName());
         double[] range = ConfigRanges.of(section, f.getName());
+        Requirement req = requirement(section, f.getName());
         if (f.getType() == boolean.class) {
             var b = entries.startBooleanToggle(label, f.getBoolean(target))
                     .setDefaultValue(f.getBoolean(defaults))
                     .setTooltip(tip)
+                    .setRequirement(req)
                     .setSaveConsumer(v -> set(f, target, v));
             return b.build();
         }
@@ -131,13 +144,15 @@ public final class GougeConfigScreen {
                         .setDefaultValue(def)
                         .setTooltip(tip)
                         .setTextGetter(v -> Component.literal(v + unit))
-                        .setSaveConsumer(v -> set(f, target, v));
+                        .setRequirement(req)
+                    .setSaveConsumer(v -> set(f, target, v));
                 return s.build();
             }
             var n = entries.startIntField(label, value)
                     .setDefaultValue(def)
                     .setTooltip(tip)
                     .setMin((int) range[0]).setMax((int) range[1])
+                    .setRequirement(req)
                     .setSaveConsumer(v -> set(f, target, v));
             return n.build();
         }
@@ -151,13 +166,15 @@ public final class GougeConfigScreen {
                         .setDefaultValue(ticks(def, step))
                         .setTooltip(tip)
                         .setTextGetter(v -> Component.literal(fmt(v * step) + unit))
-                        .setSaveConsumer(v -> set(f, target, Math.round(v * step * 1e6) / 1e6));
+                        .setRequirement(req)
+                    .setSaveConsumer(v -> set(f, target, Math.round(v * step * 1e6) / 1e6));
                 return s.build();
             }
             var n = entries.startDoubleField(label, value)
                     .setDefaultValue(def)
                     .setTooltip(tip)
                     .setMin(range[0]).setMax(range[1])
+                    .setRequirement(req)
                     .setSaveConsumer(v -> set(f, target, v));
             return n.build();
         }
@@ -168,12 +185,28 @@ public final class GougeConfigScreen {
                 var c = new ColorFieldBuilder(entries.getResetButtonKey(), label, parseColor(value, parseColor(def, 0xFFFFFF)))
                         .setDefaultValue(parseColor(def, 0xFFFFFF))
                         .setTooltip(tip)
-                        .setSaveConsumer(v -> set(f, target, String.format(Locale.ROOT, "#%06X", v & 0xFFFFFF)));
+                        .setRequirement(req)
+                    .setSaveConsumer(v -> set(f, target, String.format(Locale.ROOT, "#%06X", v & 0xFFFFFF)));
                 return c.build();
             }
             var t = entries.startStrField(label, value).setDefaultValue(def).setTooltip(tip)
+                    .setRequirement(req)
                     .setSaveConsumer(v -> set(f, target, v));
             return t.build();
+        }
+        return null;
+    }
+
+    private Requirement requirement(String section, String field) {
+        boolean toggle = field.equals("enabled");
+        if (section.equals("stamina") && !toggle && staminaToggle != null) {
+            return Requirement.isTrue(staminaToggle);
+        }
+        if (section.equals("hud") && staminaToggle != null && hudToggle != null && !toggle) {
+            return Requirement.all(Requirement.isTrue(staminaToggle), Requirement.isTrue(hudToggle));
+        }
+        if (section.equals("hud") && staminaToggle != null && toggle) {
+            return Requirement.isTrue(staminaToggle);
         }
         return null;
     }
