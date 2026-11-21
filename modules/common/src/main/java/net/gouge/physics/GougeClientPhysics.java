@@ -28,6 +28,12 @@ public final class GougeClientPhysics {
     private static int assistTicks;
     private static Direction assistDir;
     private static BlockPos assistCap;
+    private static int gripStart = -1;
+    private static int gripBase;
+    private static int gripRings = 1;
+    private static float stamina = 1f;
+    private static double gripRate = 1.0;
+    private static int lastHangTick = -1_000_000;
 
     private GougeClientPhysics() {
     }
@@ -40,8 +46,66 @@ public final class GougeClientPhysics {
         }
     }
 
+    public static int gripRings() {
+        LocalPlayer local = Minecraft.getInstance().player;
+        if (gripStart >= 0 || local == null) {
+            return gripRings;
+        }
+        return Pickaxes.gripRings(Pickaxes.heldPickaxe(local));
+    }
+
+    public static int gripPips() {
+        LocalPlayer local = Minecraft.getInstance().player;
+        return local != null && Pickaxes.isDualGripActive(local) ? 2 : 1;
+    }
+
     public static boolean isGripping() {
         return predicting;
+    }
+
+    public static boolean isHanging() {
+        return gripStart >= 0 || predicting && !GougeConfig.INSTANCE.mechanics.client_prediction;
+    }
+
+    private static double gripTotal(LocalPlayer local) {
+        return StaminaPool.total(gripBase, Pickaxes.isDualGripActive(local), GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
+    }
+
+    public static float staminaLevel(float partialTick) {
+        LocalPlayer local = Minecraft.getInstance().player;
+        if (local == null || !GougeConfig.INSTANCE.experimental.persistent_stamina || GougePhysics.modStamina() || GougeConfig.INSTANCE.mechanics.unlimited_grip) {
+            return -1f;
+        }
+        if (gripStart < 0) {
+            return stamina;
+        }
+        return StaminaPool.level(stamina, partialTick * gripRate, gripTotal(local));
+    }
+
+    public static void syncStamina(float level) {
+        if (Minecraft.getInstance().player == null) {
+            return;
+        }
+        if (gripStart < 0 || Math.abs(level - stamina) > 0.03f) {
+            stamina = level;
+        }
+    }
+
+    private static void updateStamina(LocalPlayer local) {
+        if (local.tickCount <= 1) {
+            stamina = 1f;
+        }
+        if (isHanging()) {
+            lastHangTick = local.tickCount;
+        }
+        if (gripStart >= 0) {
+            if (local.tickCount > gripStart) {
+                stamina = StaminaPool.level(stamina, gripRate, gripTotal(local));
+            }
+        } else if (stamina < 1f && !isHanging() && !GougePhysics.modStamina()
+                && local.tickCount - lastHangTick >= GougeConfig.INSTANCE.mechanics.stamina_refill_delay * 20.0) {
+            stamina = StaminaPool.refill(stamina, GougePhysics.refillSeconds());
+        }
     }
 
     public static void clientTick(Player player) {
@@ -50,6 +114,7 @@ public final class GougeClientPhysics {
         if (local == null || player != local) {
             return;
         }
+        updateStamina(local);
         if (assistTicks > 0) {
             if (GougePhysics.grounded(local) || --assistTicks <= 0) {
                 assistTicks = 0;
@@ -164,6 +229,12 @@ public final class GougeClientPhysics {
             if (Math.abs(v.y) < (hangLocked ? GripMotion.hangHoldSpeed() : GripMotion.HANG_LOCK_SPEED)) {
                 hangLocked = true;
                 local.fallDistance = 0.0F;
+                if (gripStart < 0) {
+                    gripStart = local.tickCount;
+                    gripRings = Pickaxes.gripRings(stack);
+                    gripBase = Math.max(1, (int) Math.round(Pickaxes.singlePickaxeHangTicks(stack) * BlockRules.blockGripMultiplier(state)));
+                }
+                gripRate = GougePhysics.drainRate(mc.options.keyJump.isDown() && climbOk ? 1 : shimmy ? 2 : 0);
                 var dir = hit.getDirection();
                 boolean canStand = WallGeometry.canStandOnLedge(local.level(), hit.getBlockPos(), state);
                 double ledgeTopY = WallGeometry.ledgeTopY(local.level(), hit.getBlockPos(), state);
@@ -252,6 +323,7 @@ public final class GougeClientPhysics {
                 }
             } else {
                 hangLocked = false;
+                gripStart = -1;
                 double friction = Mth.clamp(
                         GripMotion.HARD_FRICTION_BASE - hardness * GripMotion.HARD_FRICTION_SCALE,
                         GripMotion.HARD_MIN_FRICTION, GripMotion.HARD_MAX_FRICTION);
@@ -307,6 +379,7 @@ public final class GougeClientPhysics {
     private static void stop(LocalPlayer local) {
         anchor = null;
         hangLocked = false;
+        gripStart = -1;
         pin = null;
         pinDir = null;
         launchCharge = 0;

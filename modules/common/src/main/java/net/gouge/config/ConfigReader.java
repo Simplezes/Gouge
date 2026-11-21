@@ -19,6 +19,11 @@ public final class ConfigReader {
         return (v instanceof Number n) ? n.intValue() : def;
     }
 
+    static String str(CommentedConfig c, String path, String def) {
+        Object v = c.get(path);
+        return (v instanceof String s) ? s : def;
+    }
+
     static boolean bool(CommentedConfig c, String path, boolean def) {
         Object v = c.get(path);
         return (v instanceof Boolean b) ? b : def;
@@ -39,6 +44,11 @@ public final class ConfigReader {
         d.mechanics.dual_grip_enabled = bool(c, "mechanics.dual_grip_enabled", d.mechanics.dual_grip_enabled);
         d.mechanics.dual_grip_multiplier = num(c, "mechanics.dual_grip_multiplier", d.mechanics.dual_grip_multiplier);
         d.mechanics.unlimited_grip = bool(c, "mechanics.unlimited_grip", d.mechanics.unlimited_grip);
+        d.experimental.persistent_stamina = bool(c, "experimental.persistent_stamina", d.experimental.persistent_stamina);
+        d.mechanics.stamina_refill_time = num(c, "mechanics.stamina_refill_time", d.mechanics.stamina_refill_time);
+        d.mechanics.stamina_refill_delay = num(c, "mechanics.stamina_refill_delay", d.mechanics.stamina_refill_delay);
+        d.mechanics.stamina_climb_multiplier = num(c, "mechanics.stamina_climb_multiplier", d.mechanics.stamina_climb_multiplier);
+        d.mechanics.stamina_shimmy_multiplier = num(c, "mechanics.stamina_shimmy_multiplier", d.mechanics.stamina_shimmy_multiplier);
         d.mechanics.release_cooldown = num(c, "mechanics.release_cooldown", d.mechanics.release_cooldown);
         d.mechanics.use_mod_stamina = bool(c, "mechanics.use_mod_stamina", d.mechanics.use_mod_stamina);
         d.mechanics.stamina_hang_cost = num(c, "mechanics.stamina_hang_cost", d.mechanics.stamina_hang_cost);
@@ -73,6 +83,23 @@ public final class ConfigReader {
         d.effects.particles = bool(c, "effects.particles", d.effects.particles);
         d.effects.sounds = bool(c, "effects.sounds", d.effects.sounds);
         d.effects.volume = num(c, "effects.volume", d.effects.volume);
+
+        d.hud.enabled = bool(c, "hud.enabled", d.hud.enabled);
+        d.hud.show_below = num(c, "hud.show_below", d.hud.show_below);
+        d.hud.left_side = bool(c, "hud.left_side", d.hud.left_side);
+        d.hud.offset_x = inum(c, "hud.offset_x", d.hud.offset_x);
+        d.hud.offset_y = inum(c, "hud.offset_y", d.hud.offset_y);
+        d.hud.scale = inum(c, "hud.scale", d.hud.scale);
+        d.hud.opacity = num(c, "hud.opacity", d.hud.opacity);
+        d.hud.show_pips = bool(c, "hud.show_pips", d.hud.show_pips);
+        d.hud.show_rings = bool(c, "hud.show_rings", d.hud.show_rings);
+        d.hud.blink_when_low = bool(c, "hud.blink_when_low", d.hud.blink_when_low);
+        d.hud.hold_time = num(c, "hud.hold_time", d.hud.hold_time);
+        d.hud.mid_threshold = num(c, "hud.mid_threshold", d.hud.mid_threshold);
+        d.hud.low_threshold = num(c, "hud.low_threshold", d.hud.low_threshold);
+        d.hud.high_color = str(c, "hud.high_color", d.hud.high_color);
+        d.hud.mid_color = str(c, "hud.mid_color", d.hud.mid_color);
+        d.hud.low_color = str(c, "hud.low_color", d.hud.low_color);
 
         d.enchantments.spring_bonus = num(c, "enchantments.spring_bonus", d.enchantments.spring_bonus);
         d.enchantments.spring_cap_bonus = inum(c, "enchantments.spring_cap_bonus", d.enchantments.spring_cap_bonus);

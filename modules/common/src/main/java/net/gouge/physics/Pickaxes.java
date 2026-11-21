@@ -106,6 +106,19 @@ public final class Pickaxes {
         return baseTicks + enchLevel(stack, GougeEnchantments.GRIP) * bonusTicks;
     }
 
+    public static ItemStack heldPickaxe(Player player) {
+        ItemStack main = player.getMainHandItem();
+        if (isPickaxe(main)) {
+            return main;
+        }
+        ItemStack off = player.getOffhandItem();
+        return isPickaxe(off) ? off : ItemStack.EMPTY;
+    }
+
+    public static int gripRings(ItemStack stack) {
+        return 1 + Math.min(2, stack.isEmpty() ? 0 : enchLevel(stack, GougeEnchantments.GRIP));
+    }
+
     public static int maxHangTicks(Player player, ItemStack stack) {
         int ticks = singlePickaxeHangTicks(stack);
         if (isDualGripActive(player)) {
