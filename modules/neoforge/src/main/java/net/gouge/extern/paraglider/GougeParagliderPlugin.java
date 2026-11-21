@@ -12,28 +12,37 @@ import tictim.paraglider.api.stamina.Stamina;
 
 @ParagliderPlugin
 public final class GougeParagliderPlugin implements MovementPlugin {
-    private Identifier grip;
+    private static final int MAX = 100;
+    private final Identifier[] grip = new Identifier[MAX + 1];
 
     private static double delta(double percentPerSecond) {
         return -GougePhysics.staminaCurve(percentPerSecond) * Stamina.STAMINA_PER_WHEEL / 20.0;
     }
 
+    private static int cost() {
+        return (int) Math.round(Math.max(0, Math.min(MAX, GougeConfig.INSTANCE.stamina.hang_cost)));
+    }
+
     @Override
     public void registerNewStates(PlayerStateRegister register) {
-        double cost = GougeConfig.INSTANCE.stamina.hang_cost;
-        grip = Identifier.fromNamespaceAndPath("gouge", "grip_" + Math.round(cost * 100));
-        register.register(grip, delta(cost));
+        for (int i = 0; i <= MAX; i++) {
+            grip[i] = Identifier.fromNamespaceAndPath("gouge", "grip_" + i);
+            register.register(grip[i], delta(i));
+        }
     }
 
     @Override
     public void modifyRegisteredStates(PlayerStateModifier modifier) {
-        LogUtils.getLogger().info("[Gouge] Paraglider states {}", modifier.exists(grip) ? "OK" : "MISSING");
+        LogUtils.getLogger().info("[Gouge] Paraglider states {}", modifier.exists(grip[MAX]) ? "OK" : "MISSING");
     }
 
     @Override
     public void registerStateConnections(PlayerStateConnectionRegister register) {
-        register.connect(ParagliderPlayerStates.IDLE, grip,
-                ctx -> GougePhysics.modStamina() && GripState.isActive(ctx.player().getUUID()),
-                9.0);
+        for (int i = 0; i <= MAX; i++) {
+            int step = i;
+            register.connect(ParagliderPlayerStates.IDLE, grip[i],
+                    ctx -> GripState.isActive(ctx.player().getUUID()) && GougePhysics.modStamina() && cost() == step,
+                    9.0);
+        }
     }
 }
