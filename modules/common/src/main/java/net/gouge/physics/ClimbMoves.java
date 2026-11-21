@@ -155,7 +155,7 @@ public final class ClimbMoves {
     }
 
     static boolean traverseAllowed(ServerPlayer player) {
-        ConfigData.Traverse t = GougeConfig.INSTANCE.traverse;
+        ConfigData.Shimmy t = GougeConfig.INSTANCE.shimmy;
         return t.enabled && (!t.requires_dual || isDualGripActive(player));
     }
 
@@ -191,7 +191,7 @@ public final class ClimbMoves {
             var snd = wall.getSoundType();
             sound(world, next, snd.getHitSound(), 0.7f, 0.75f + world.getRandom().nextFloat() * 0.3f);
         }
-        int cost = GougeConfig.INSTANCE.traverse.durability_cost;
+        int cost = GougeConfig.INSTANCE.shimmy.durability_cost;
         if (cost > 0 && now % 20 == 0) {
             player.getUseItem().hurtAndBreak(cost, player, item -> {});
         }
@@ -275,7 +275,7 @@ public final class ClimbMoves {
     static void startCooldown(ServerPlayer player, int[] d) {
         ItemStack stack = player.getUseItem();
         int momentum = enchLevel(stack, GougeEnchantments.MOMENTUM);
-        int baseCooldown = (int) (GougeConfig.INSTANCE.mechanics.slip_cooldown * 20);
+        int baseCooldown = (int) (GougeConfig.INSTANCE.grip.slip_cooldown * 20);
         int reduction = (int) (GougeConfig.INSTANCE.enchantments.momentum_reduction * 20);
         int cooldown = Math.max(0, baseCooldown - momentum * reduction);
         d[1] = cooldown > 0 ? serverTick(player) + cooldown : -1;

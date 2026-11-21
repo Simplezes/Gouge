@@ -103,7 +103,7 @@ public final class GougePhysics {
     }
 
     public static void releaseCooldown(ServerPlayer player) {
-        int ticks = (int) (GougeConfig.INSTANCE.mechanics.release_cooldown * 20);
+        int ticks = (int) (GougeConfig.INSTANCE.grip.release_cooldown * 20);
         if (ticks <= 0 || grounded(player) || hasMantled(player)) {
             return;
         }
@@ -115,7 +115,7 @@ public final class GougePhysics {
     }
 
     public static boolean blocksOtherHand(Level world, Player player, InteractionHand hand) {
-        if (!GougeConfig.INSTANCE.mechanics.block_other_hand) {
+        if (!GougeConfig.INSTANCE.grip.block_other_hand) {
             return false;
         }
         ItemStack pick = player.getItemInHand(hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
@@ -135,7 +135,7 @@ public final class GougePhysics {
         }
         if (grounded(player) || player.getDeltaMovement().y >= 0 || player.isSpectator() || player.getAbilities().flying
                 || player.getCooldowns().isOnCooldown(pick.getItem())
-                || !hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) {
+                || !hasFallClearance(world, player, GougeConfig.INSTANCE.grip.min_fall_distance)) {
             return false;
         }
         BlockHitResult hit = raycast(world, player);
@@ -146,27 +146,27 @@ public final class GougePhysics {
         return player.onGround() || !player.level().noCollision(player, player.getBoundingBox().move(0, -0.05, 0));
     }
 
+    public static double refillSeconds() {
+        ConfigData.Stamina s = GougeConfig.INSTANCE.stamina;
+        return GougeConfig.INSTANCE.stamina.enabled ? s.refill_time : 0.0;
+    }
+
     public static double staminaCurve(double percent) {
         double p = percent / 100.0;
         return p * (1.0 + 9.0 * p * p);
     }
 
-    public static double refillSeconds() {
-        ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-        return GougeConfig.INSTANCE.experimental.persistent_stamina ? m.stamina_refill_time : 0.0;
-    }
-
     public static double drainRate(int mode) {
-        ConfigData.Mechanics m = GougeConfig.INSTANCE.mechanics;
-        double base = mode == 1 ? m.stamina_climb_multiplier : mode == 2 ? m.stamina_shimmy_multiplier : 1.0;
-        if (!GougeConfig.INSTANCE.experimental.persistent_stamina) {
+        ConfigData.Stamina s = GougeConfig.INSTANCE.stamina;
+        double base = mode == 1 ? s.climb_multiplier : mode == 2 ? s.shimmy_multiplier : 1.0;
+        if (!GougeConfig.INSTANCE.stamina.enabled) {
             return base;
         }
-        return base * staminaCurve(m.stamina_hang_cost) / staminaCurve(12.0);
+        return base * staminaCurve(s.hang_cost) / staminaCurve(12.0);
     }
 
     public static boolean modStamina() {
-        return GougeConfig.INSTANCE.mechanics.use_mod_stamina && GougePlatform.get().hasModStamina();
+        return GougeConfig.INSTANCE.stamina.use_mod && GougePlatform.get().hasModStamina();
     }
 
     private static void putPool(ServerPlayer player, UUID id, float value) {
@@ -177,7 +177,7 @@ public final class GougePhysics {
         if (edge || moved) {
             sentPools.put(id, value);
             sentAt.put(id, player.tickCount);
-            if (GougeConfig.INSTANCE.experimental.persistent_stamina) {
+            if (GougeConfig.INSTANCE.stamina.enabled) {
                 GougePlatform.get().sendStamina(player, value);
             }
         }
@@ -196,7 +196,7 @@ public final class GougePhysics {
         if ((d != null && d[0] != -1) || modStamina()) {
             return;
         }
-        double delay = GougeConfig.INSTANCE.mechanics.stamina_refill_delay * 20.0;
+        double delay = GougeConfig.INSTANCE.stamina.refill_delay * 20.0;
         if (delay > 0 && refillSeconds() > 0 && serverTick(player) - drainedAt.getOrDefault(id, -1_000_000) < delay) {
             return;
         }
@@ -317,7 +317,7 @@ public final class GougePhysics {
             return false;
         }
 
-        double maxDrift = GougeConfig.INSTANCE.mechanics.max_drift;
+        double maxDrift = GougeConfig.INSTANCE.grip.max_drift;
         if (maxDrift > 0) {
             Vec3 anchor = anchors.get(player.getUUID());
             if (anchor != null) {
@@ -405,7 +405,7 @@ public final class GougePhysics {
             if (Math.abs(effVy) < lockLimit) {
                 slideVy.remove(uid);
                 player.fallDistance = 0.0F;
-                boolean timed = !modStamina() && !GougeConfig.INSTANCE.mechanics.unlimited_grip;
+                boolean timed = !modStamina() && !GougeConfig.INSTANCE.grip.unlimited;
                 float left = pools.getOrDefault(uid, 1f);
                 if (d[0] == -1) {
                     d[5] = now;
@@ -416,7 +416,7 @@ public final class GougePhysics {
                 }
                 if (timed) {
                     double total = StaminaPool.total(d[7], isDualGripActive(player),
-                            GougeConfig.INSTANCE.mechanics.dual_grip_multiplier);
+                            GougeConfig.INSTANCE.grip.dual_multiplier);
                     int elapsed = now - drainedAt.getOrDefault(uid, now);
                     if (elapsed > 0) {
                         left = Math.max(0f, left - (float) (elapsed * drainRate(gripMode(player)) / total));

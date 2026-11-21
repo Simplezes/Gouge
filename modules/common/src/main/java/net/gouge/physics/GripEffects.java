@@ -74,7 +74,7 @@ public final class GripEffects {
     static final Map<UUID, Integer> clingAt = new ConcurrentHashMap<>();
 
     static void cling(ServerLevel world, ServerPlayer player, int[] d, int now) {
-        boolean timed = !GougePhysics.modStamina() && !GougeConfig.INSTANCE.mechanics.unlimited_grip;
+        boolean timed = !GougePhysics.modStamina() && !GougeConfig.INSTANCE.grip.unlimited;
         float left = timed ? (float) (d[0] - now) / Math.max(1, d[0] - d[5]) : 1f;
         float urgency = left >= 0.5f ? 0f : 1f - left / 0.5f;
         int last = Math.max(clingAt.getOrDefault(player.getUUID(), d[5]), d[5]);
@@ -126,7 +126,7 @@ public final class GripEffects {
     static void updateClimbFx(ServerPlayer player, ServerLevel world, BlockHitResult hit,
             BlockPos pos, BlockState state, float hardness, int now) {
         warnLowDurability(world, player, now);
-        int trailLength = GougeConfig.INSTANCE.mechanics.trail_length;
+        int trailLength = GougeConfig.INSTANCE.slide.trail_length;
         if (trailLength <= 0) {
             if (now % 5 == 0) {
                 spawnJuice(world, hit, state, hardness);

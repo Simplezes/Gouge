@@ -61,9 +61,9 @@ Apply these to pickaxes with an Enchanting Table or an Anvil:
 
 ## **Configuration**
 
-Every value lives in `config/gouge.toml`, including a `[block_grip]` table to make specific blocks or tags easier or harder to hold. Every new feature can be switched on or off and tuned.
+Every value lives in `config/gouge.toml`, grouped into `[grip]`, `[slide]`, `[stamina]`, `[climbing]`, `[shimmy]`, `[launch]`, `[wall_jump]`, `[enchantments]`, `[effects]` and `[hud]`, each key documented in place. Old configs are migrated automatically on first load. Pickaxe stats, `[block_overrides]` and a `[block_grip]` table let you tune specific items, blocks or tags. Every new feature can be switched on or off and tuned.
 
-**Grip stamina (experimental).** Off by default. Set `experimental.persistent_stamina = true` for a grip stamina pool and wheel.
+**Grip stamina (experimental).** Off by default. Set `enabled = true` under `[stamina]` for a grip stamina pool and wheel.
 
 If you have **Cloth Config** installed (plus **Mod Menu** on Fabric), the main options also get an in-game screen. It is optional, and the mod runs the same without it.
 

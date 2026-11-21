@@ -39,7 +39,7 @@ public final class WallRaycast {
     }
 
     public static BlockHitResult raycast(Level world, Player user) {
-        double reach = GougeConfig.INSTANCE.mechanics.reach;
+        double reach = GougeConfig.INSTANCE.grip.reach;
         Vec3 start = user.getEyePosition(1.0f);
         Vec3 look = user.getViewVector(1.0f);
         BlockHitResult hit = world.clip(new ClipContext(

@@ -49,7 +49,7 @@ public abstract class GougeItemMixin {
         if (GripState.isActive(player.getUUID())) return;
         if (GripState.hasMantled(player)) return;
         if (GougePhysics.grounded(player) || player.getDeltaMovement().y >= 0) return;
-        if (!WallRaycast.hasFallClearance(world, player, GougeConfig.INSTANCE.mechanics.min_fall_distance)) return;
+        if (!WallRaycast.hasFallClearance(world, player, GougeConfig.INSTANCE.grip.min_fall_distance)) return;
         if (player.isSpectator() || player.getAbilities().flying) return;
         if (net.gouge.platform.GougePlatform.get().blocksGouge(player.getUUID())) return;
 
