@@ -123,6 +123,6 @@ public final class GripState {
 
     public static float fallDamageMultiplier(UUID id) {
         int[] d = hangData.get(id);
-        return (d != null && d[4] == 1) ? (float) GougeConfig.INSTANCE.mechanics.soft_fall_damage : 1.0f;
+        return (d != null && d[4] == 1) ? (float) GougeConfig.INSTANCE.slide.fall_damage : 1.0f;
     }
 }
