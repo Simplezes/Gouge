@@ -102,7 +102,7 @@ public final class RowsScreen extends Screen {
 
     private int valuesWidth() {
         int n = spec.labels().length - 1;
-        return spec.kindColumn() ? KIND_W + (n - 1) * (VAL_W + 6) : n * VAL_W + (n - 1) * 6;
+        return spec.kindColumn() ? KIND_W + (n - 1) * (VAL_W + 6) : Math.max(0, n * VAL_W + (n - 1) * 6);
     }
 
     private int cardWidth() {
@@ -177,26 +177,27 @@ public final class RowsScreen extends Screen {
         }
         int cx = width / 2;
         int buttons = height - 56;
+        int bw = Math.max(60, Math.min(150, width / 2 - 10));
         addRenderableWidget(Button.builder(Component.literal("+ Add"), b -> {
             rows.add(spec.blank().clone());
             page = Integer.MAX_VALUE;
             rebuildWidgets();
-        }).bounds(left, buttons, 80, 20).build());
+        }).bounds(cx - 147, buttons, 80, 20).build());
         Button prev = addRenderableWidget(Button.builder(Component.literal("<"), b -> {
             page--;
             rebuildWidgets();
-        }).bounds(cx - 96, buttons, 24, 20).build());
+        }).bounds(cx - 59, buttons, 24, 20).build());
         Button next = addRenderableWidget(Button.builder(Component.literal(">"), b -> {
             page++;
             rebuildWidgets();
-        }).bounds(cx + 72, buttons, 24, 20).build());
+        }).bounds(cx + 123, buttons, 24, 20).build());
         prev.active = page > 0;
         next.active = page < pages - 1;
         addRenderableWidget(Button.builder(Component.literal("Done"), b -> {
             onDone.accept(rows);
             minecraft.setScreen(parent);
-        }).bounds(cx - 155, height - 30, 150, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose()).bounds(cx + 5, height - 30, 150, 20).build());
+        }).bounds(cx - bw - 5, height - 30, bw, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> onClose()).bounds(cx + 5, height - 30, bw, 20).build());
     }
 
     @Override
@@ -390,7 +391,7 @@ public final class RowsScreen extends Screen {
         g.fill(px + 12, footer, px + pw - 12, footer + 1, PANEL_LINE);
         int pages = Math.max(1, (rows.size() + perPage() - 1) / perPage());
         g.drawCenteredString(font, "Page " + (page + 1) + " / " + pages + "   " + rows.size() + (rows.size() == 1 ? " entry" : " entries"),
-                width / 2, height - 50, 0xFFA0A0A8);
+                width / 2 + 44, height - 50, 0xFFA0A0A8);
     }
 
     @Override
