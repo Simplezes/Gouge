@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.CommentedConfig;
 import net.gouge.config.ConfigData.PickaxeStats;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +99,17 @@ public final class ConfigReader {
             if (!parsed.isEmpty()) {
                 d.pickaxes = parsed;
             }
+        }
+
+        Object blacklistRaw = c.get(List.of("pickaxe_blacklist"));
+        if (blacklistRaw instanceof List<?> list) {
+            List<String> parsed = new ArrayList<>();
+            for (Object o : list) {
+                if (o instanceof String s) {
+                    parsed.add(s);
+                }
+            }
+            d.pickaxe_blacklist = parsed;
         }
 
         Object overridesRaw = c.get(List.of("block_overrides"));

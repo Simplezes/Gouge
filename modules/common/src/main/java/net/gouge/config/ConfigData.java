@@ -1,6 +1,8 @@
 package net.gouge.config;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ConfigData {
@@ -17,6 +19,7 @@ public class ConfigData {
     public Map<String, Double> block_grip = new LinkedHashMap<>();
     public Map<String, PickaxeStats> pickaxes = new LinkedHashMap<>();
     public Map<String, String> block_overrides = new LinkedHashMap<>();
+    public List<String> pickaxe_blacklist = new ArrayList<>();
 
     public ConfigData() {
         pickaxes.put("minecraft:wooden_pickaxe", new PickaxeStats(2.0, 1));

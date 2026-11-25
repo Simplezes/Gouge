@@ -31,8 +31,29 @@ public final class Pickaxes {
     static volatile List<Map.Entry<TagKey<Item>, ConfigData.PickaxeStats>> tagStatsCache;
 
     public static boolean isPickaxe(ItemStack stack) {
-        return stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
-                || GougePlatform.get().isPickaxeTool(stack);
+        return !blacklisted(stack) && (stack.is(ItemTags.PICKAXES) || stack.getItem() instanceof PickaxeItem
+                || GougePlatform.get().isPickaxeTool(stack));
+    }
+
+    static boolean blacklisted(ItemStack stack) {
+        List<String> list = GougeConfig.INSTANCE.pickaxe_blacklist;
+        if (list.isEmpty()) {
+            return false;
+        }
+        String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        for (String entry : list) {
+            if (!entry.startsWith("#")) {
+                if (entry.equals(id)) {
+                    return true;
+                }
+                continue;
+            }
+            ResourceLocation tagId = ResourceLocation.tryParse(entry.substring(1));
+            if (tagId != null && stack.is(TagKey.create(Registries.ITEM, tagId))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean hasDualPickaxes(Player player) {
