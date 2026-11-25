@@ -37,8 +37,9 @@ final class Rules {
         overrides.clear();
         var sec = plugin.getConfig().getConfigurationSection("pickaxes");
         fallback = pair(sec.getDoubleList("fallback"));
+        List<String> blacklist = plugin.getConfig().getStringList("pickaxe_blacklist");
         for (Material m : Material.values()) {
-            if (m.isLegacy() || !m.isItem()) continue;
+            if (m.isLegacy() || !m.isItem() || blacklisted(blacklist, m)) continue;
             double[] st = pair(sec.getDoubleList(m.getKey().toString()));
             if (st == null) {
                 for (String key : sec.getKeys(false)) {
@@ -62,6 +63,13 @@ final class Rules {
 
     private static double[] pair(List<Double> l) {
         return l.size() < 2 ? null : new double[]{l.get(0), l.get(1)};
+    }
+
+    private static boolean blacklisted(List<String> blacklist, Material m) {
+        for (String key : blacklist) {
+            if (key.startsWith("#") ? tagHas(key.substring(1), m) : key.equals(m.getKey().toString())) return true;
+        }
+        return false;
     }
 
     private static boolean tagHas(String key, Material m) {
