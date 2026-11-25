@@ -43,6 +43,16 @@ public final class ConfigValidator {
         if (c.pickaxes == null) {
             c.pickaxes = defaults.pickaxes;
         }
+        if (c.pickaxe_blacklist == null) {
+            c.pickaxe_blacklist = new java.util.ArrayList<>();
+        }
+        c.pickaxe_blacklist.removeIf(id -> {
+            boolean bad = id == null || !id.matches("#?[a-z0-9_.-]+:[a-z0-9_./-]+");
+            if (bad) {
+                LOGGER.warn("Ignoring invalid pickaxe_blacklist entry in gouge.toml: {}", id);
+            }
+            return bad;
+        });
         if (c.block_overrides == null) {
             c.block_overrides = new LinkedHashMap<>();
         }

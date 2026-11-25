@@ -61,7 +61,7 @@ Apply these to pickaxes with an Enchanting Table or an Anvil:
 
 ## **Configuration**
 
-Every value lives in `config/gouge.toml`, grouped into `[grip]`, `[slide]`, `[stamina]`, `[climbing]`, `[shimmy]`, `[launch]`, `[wall_jump]`, `[enchantments]`, `[effects]` and `[hud]`, each key documented in place. Old configs are migrated automatically on first load. Pickaxe stats, `[block_overrides]` and a `[block_grip]` table let you tune specific items, blocks or tags. Every new feature can be switched on or off and tuned.
+Every value lives in `config/gouge.toml`, grouped into `[grip]`, `[slide]`, `[stamina]`, `[climbing]`, `[shimmy]`, `[launch]`, `[wall_jump]`, `[enchantments]`, `[effects]` and `[hud]`, each key documented in place. Old configs are migrated automatically on first load. Pickaxe stats, `[block_overrides]` and a `[block_grip]` table let you tune specific items, blocks or tags, and `pickaxe_blacklist` stops chosen items or `#tags` from gripping at all. Every new feature can be switched on or off and tuned.
 
 **Grip stamina (experimental).** Off by default. Set `enabled = true` under `[stamina]` for a grip stamina pool and wheel.
 

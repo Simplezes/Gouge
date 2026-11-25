@@ -286,6 +286,15 @@ public final class GougeConfigScreen {
                     new PickaxeStats(parse(r[1], 3.0, 0, 3600), (int) parse(r[2], 2, 0, 1000))));
             current.pickaxes = map;
         });
+        var blacklist = new RowsScreen.Spec("Pickaxe blacklist",
+                "Items or #tags that can never grip, even if they are pickaxes or listed under Pickaxes.",
+                new String[]{"Item or #tag"}, false, new String[]{"minecraft:"}, false);
+        opener(category, "Pickaxe blacklist", "Pickaxe blacklist...", blacklist, () -> {
+            List<String[]> rows = new ArrayList<>();
+            current.pickaxe_blacklist.forEach(id -> rows.add(new String[]{id}));
+            return rows;
+        }, rows -> current.pickaxe_blacklist = rows.stream().map(r -> r[0]).filter(id -> validId(id) && !id.equals("fallback"))
+                .distinct().collect(java.util.stream.Collectors.toCollection(ArrayList::new)));
         var blocks = new RowsScreen.Spec("Blocks: hard or soft, and grip strength",
                 "Hard blocks hold you, soft blocks make you slide. Grip is a hang time multiplier (0-10): 1 is normal, 0.5 slips twice as fast, "
                         + "2 holds twice as long. Tags (#...) only support grip. Entries left on Default and 1 have no effect and are not saved.",
