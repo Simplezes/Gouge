@@ -3,6 +3,7 @@ package net.gouge.config;
 import com.electronwill.nightconfig.core.CommentedConfig;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class ConfigWriter {
@@ -35,7 +36,8 @@ public final class ConfigWriter {
                         + " Out-of-range values are clamped on load. Pickaxe stats are at the bottom.\n"
                         + " Optional tables you can add (or edit in-game under Blocks):\n"
                         + "   [block_overrides]  \"minecraft:sandstone\" = \"hard\" or \"soft\" (default: tool-required vanilla blocks and modded blocks are hard)\n"
-                        + "   [block_grip]       \"minecraft:ice\" = 0.25 or \"#minecraft:logs\" = 1.5 (hang time multiplier, 0 to 10)\n" + head;
+                        + "   [block_grip]       \"minecraft:ice\" = 0.25 or \"#minecraft:logs\" = 1.5 (hang time multiplier, 0 to 10)\n"
+                        + "   pickaxe_blacklist  [\"modid:some_pickaxe\", \"#c:hammers\"] (items or #tags that can never grip)\n" + head;
                 first = false;
             }
             c.setComment(name, head + "\n " + RULE);
@@ -55,6 +57,10 @@ public final class ConfigWriter {
             c.set(List.of("pickaxes", entry.getKey(), "damage_rate"), entry.getValue().damage_rate);
         }
 
+        if (!d.pickaxe_blacklist.isEmpty()) {
+            c.set("pickaxe_blacklist", new ArrayList<>(d.pickaxe_blacklist));
+            c.setComment("pickaxe_blacklist", " Items or #tags that can never grip, even if they are pickaxes or listed under [pickaxes].");
+        }
         if (!d.block_overrides.isEmpty()) {
             c.set("block_overrides", CommentedConfig.inMemory());
             c.setComment("block_overrides", " Blocks that hang (\"hard\") or slide (\"soft\") differently from the default.");

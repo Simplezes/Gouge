@@ -141,6 +141,11 @@ pickaxes:
   "minecraft:netherite_pickaxe": [15.0, 7]
   fallback: [3.0, 2]
 
+# Items or #tags that can never grip, even if they are pickaxes or listed under pickaxes. Example:
+#   - "modid:some_pickaxe"
+#   - "#c:hammers"
+pickaxe_blacklist: []
+
 # Decides whether a block hangs like solid rock ("hard") or lets you slide down ("soft").
 # By default a block is hard if it requires the correct tool for drops (stone, ores, bricks...)
 # and soft otherwise (sand, dirt, wood, leaves...). Add entries to override, e.g.:
